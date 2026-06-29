@@ -1,0 +1,428 @@
+﻿{
+  "root": "E:\\PycharmProjects\\MGStalker\\src\\ClientMods",
+  "counts": {
+    ".c": 179,
+    ".edds": 154,
+    ".meta": 153,
+    ".layout": 99,
+    ".paa": 57,
+    ".cpp": 35,
+    ".png": 30,
+    ".imageset": 17,
+    ".csv": 7,
+    ".styles": 4
+  },
+  "edds": {
+    "total": 154,
+    "ddsHeaderReadable": 154,
+    "unreadable": 0,
+    "largest": [
+      {
+        "path": "MG_StalkerPDA/gui/data/menu_icons.edds",
+        "width": 2000,
+        "height": 2000,
+        "format": "32bpp"
+      },
+      {
+        "path": "MG_Stalker_GUI/data/vanilla/bg.edds",
+        "width": 1920,
+        "height": 1080,
+        "format": "32bpp"
+      },
+      {
+        "path": "MG_Stalker_GUI/data/vanilla/bg_mainmenu.edds",
+        "width": 1920,
+        "height": 1080,
+        "format": "32bpp"
+      },
+      {
+        "path": "MG_Stalker_GUI/data/vanilla/bg_reg.edds",
+        "width": 1920,
+        "height": 1080,
+        "format": "32bpp"
+      },
+      {
+        "path": "MG_Stalker_GUI/gui/data/ls/loadingscreen1.edds",
+        "width": 1920,
+        "height": 1080,
+        "format": "32bpp"
+      },
+      {
+        "path": "MG_Stalker_GUI/gui/data/ls/loadingscreen2.edds",
+        "width": 1920,
+        "height": 1080,
+        "format": "32bpp"
+      },
+      {
+        "path": "MG_Stalker_GUI/gui/data/ls/loadingscreen3.edds",
+        "width": 1920,
+        "height": 1080,
+        "format": "32bpp"
+      },
+      {
+        "path": "MG_Stalker_GUI/gui/data/ls/loadingscreen4.edds",
+        "width": 1920,
+        "height": 1080,
+        "format": "32bpp"
+      }
+    ]
+  },
+  "imageSets": {
+    "total": 17,
+    "names": [
+      {
+        "name": "checkboxes_mg",
+        "path": "MG_StalkerPDA/gui/data/checkboxes_mg.imageset",
+        "images": 4,
+        "textures": 1
+      },
+      {
+        "name": "data",
+        "path": "MG_StalkerPDA/gui/data/data.imageset",
+        "images": 42,
+        "textures": 1
+      },
+      {
+        "name": "mg_pda",
+        "path": "MG_StalkerPDA/gui/data/fractions_logos.imageset",
+        "images": 15,
+        "textures": 1
+      },
+      {
+        "name": "spda_icons",
+        "path": "MG_StalkerPDA/gui/data/menu_icons.imageset",
+        "images": 15,
+        "textures": 1
+      },
+      {
+        "name": "pda2",
+        "path": "MG_StalkerPDA/gui/data/pda2_images.imageset",
+        "images": 24,
+        "textures": 1
+      },
+      {
+        "name": "sdcard",
+        "path": "MG_StalkerPDA_Core/data/icon_sd.imageset",
+        "images": 1,
+        "textures": 1
+      },
+      {
+        "name": "updFractionIcons",
+        "path": "MG_Stalker_GUI/data/updatedFractionIcons.imageset",
+        "images": 27,
+        "textures": 1
+      },
+      {
+        "name": "auction_icons",
+        "path": "MG_Stalker_GUI/gui/auction_icons.imageset",
+        "images": 17,
+        "textures": 1
+      },
+      {
+        "name": "checkbox_gui",
+        "path": "MG_Stalker_GUI/gui/checkbox.imageset",
+        "images": 2,
+        "textures": 1
+      },
+      {
+        "name": "elements_img",
+        "path": "MG_Stalker_GUI/gui/elements_img.imageset",
+        "images": 36,
+        "textures": 1
+      },
+      {
+        "name": "banking_icons",
+        "path": "MG_Stalker_GUI/gui/imagesets/banking_icons.imageset",
+        "images": 7,
+        "textures": 1
+      },
+      {
+        "name": "elements",
+        "path": "MG_Stalker_GUI/gui/imagesets/elements.imageset",
+        "images": 80,
+        "textures": 1
+      },
+      {
+        "name": "factions",
+        "path": "MG_Stalker_GUI/gui/imagesets/factions.imageset",
+        "images": 13,
+        "textures": 1
+      },
+      {
+        "name": "ipad_icons",
+        "path": "MG_Stalker_GUI/gui/imagesets/ipad_icons.imageset",
+        "images": 16,
+        "textures": 1
+      },
+      {
+        "name": "map_icons",
+        "path": "MG_Stalker_GUI/gui/imagesets/map_icons.imageset",
+        "images": 69,
+        "textures": 1
+      },
+      {
+        "name": "map_icons_2",
+        "path": "MG_Stalker_GUI/gui/imagesets/map_icons_2.imageset",
+        "images": 18,
+        "textures": 1
+      },
+      {
+        "name": "mg_mainmenu",
+        "path": "MG_Stalker_GUI/gui/imagesets/menu.imageset",
+        "images": 54,
+        "textures": 1
+      }
+    ]
+  },
+  "imageRefs": {
+    "total": 419,
+    "diagnostics": [],
+    "diagnosticCount": 0,
+    "externalRefCount": 158,
+    "externalRefs": [
+      {
+        "type": "vanilla-path",
+        "ref": "DZ\\\\gear\\\\navigation\\\\data\\\\map_smalltree_ca.paa",
+        "file": "MG_Arena/scripts/4_World/ArenaMenu.c",
+        "line": 115
+      },
+      {
+        "type": "vanilla-path",
+        "ref": "DZ\\\\gear\\\\navigation\\\\data\\\\map_smalltree_ca.paa",
+        "file": "MG_GPSTracker/scripts/5_Mission/MG_GPSMiniMap.c",
+        "line": 236
+      },
+      {
+        "type": "vanilla-path",
+        "ref": "DZ\\\\gear\\\\navigation\\\\data\\\\map_smalltree_ca.paa",
+        "file": "MG_GPSTracker/scripts/5_Mission/MG_GPSMiniMap.c",
+        "line": 245
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:circle",
+        "file": "MG_StalkerPDA/gui/layouts/modals/map.layout",
+        "line": 129
+      },
+      {
+        "type": "vanilla-path",
+        "ref": "dz\\\\gear\\\\navigation\\\\data\\\\map_tree_ca.paa",
+        "file": "MG_StalkerPDA/scripts/4_World/PDAModuleMap.c",
+        "line": 202
+      },
+      {
+        "type": "vanilla-path",
+        "ref": "DZ\\\\gear\\\\navigation\\\\data\\\\map_smalltree_ca.paa",
+        "file": "MG_StalkerPDA/scripts/4_World/PDAModuleMap.c",
+        "line": 210
+      },
+      {
+        "type": "vanilla-path",
+        "ref": "DZ\\\\gear\\\\navigation\\\\data\\\\map_smalltree_ca.paa",
+        "file": "MG_StalkerPDA/scripts/4_World/PDAModuleMap.c",
+        "line": 237
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_crosshairs image:dot_4x4",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 317
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_crosshairs image:cross_128x128",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 335
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_crosshairs image:crossT_128x128",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 355
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:conPing",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 441
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:conPing",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 460
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:conServer",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 478
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:conServer",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 495
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:conLost",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 512
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconDrops",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 553
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconBone",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 574
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconStomach2",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 594
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconBacteria",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 614
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconPill",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 635
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconSkull",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 656
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconBleeding",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 677
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconShock",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 713
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconInjuredLegs0",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 734
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconHealth0",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 814
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp3",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 837
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp2",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 860
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp1",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 883
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp1",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 905
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp2",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 928
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp3",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 951
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconBlood0",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 988
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp3",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 1039
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp2",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 1062
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp1",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 1085
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp1",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 1107
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp2",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 1130
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconArrowUp3",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 1153
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconTemperature0",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 1202
+      },
+      {
+        "type": "builtin-set",
+        "ref": "set:dayz_gui image:iconHeatBuffer",
+        "file": "MG_Stalker_GUI/gui/layouts/vanilla/day_z_hud.layout",
+        "line": 1251
+      }
+    ]
+  },
+  "diagnostics": {
+    "imageSetTextureDiagnostics": []
+  }
+}

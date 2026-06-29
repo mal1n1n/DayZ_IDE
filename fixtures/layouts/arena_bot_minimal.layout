@@ -1,0 +1,25 @@
+FrameWidgetClass rootFrame {
+ position 0 0
+ size 1 1
+ hexactpos 0
+ vexactpos 0
+ {
+  ImageWidgetClass Header {
+   position 0.25 0.02
+   size 0.5 0.12
+   image0 "{759C43E52C345E70}MG_Arena/gui/data/header.edds"
+  }
+  TextWidgetClass Title {
+   position 0.28 0.04
+   size 0.44 0.05
+   text "Arena queue"
+   font "gui/fonts/Metron-Bold28"
+   style Normal
+  }
+  ImageWidgetClass ArenaIcon {
+   position 0.46 0.16
+   size 0.08 0.08
+   image0 "MG_Arena/gui/data/icons/Arena 1x1 icon.edds"
+  }
+ }
+}

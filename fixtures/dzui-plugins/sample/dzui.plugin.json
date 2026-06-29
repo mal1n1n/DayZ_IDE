@@ -1,0 +1,35 @@
+{
+  "id": "sample.tools",
+  "name": "Sample DZUI Tools",
+  "version": "0.1.0",
+  "apiVersion": "0.1",
+  "description": "Fixture plugin manifest for DZUI SDK discovery tests.",
+  "entry": "./index.mjs",
+  "contributes": {
+    "commands": [
+      {
+        "id": "sample.tools.refresh",
+        "title": "Refresh Sample Tools"
+      }
+    ],
+    "widgetPresets": [
+      {
+        "id": "sample.tools.badge",
+        "label": "Sample Badge",
+        "typeClass": "TextWidgetClass",
+        "category": "plugin",
+        "props": {
+          "text": ["Sample"],
+          "size": [0.16, 0.04]
+        }
+      }
+    ],
+    "panels": [
+      {
+        "id": "sample.tools.panel",
+        "title": "Sample Tools",
+        "entry": "./panel.html"
+      }
+    ]
+  }
+}

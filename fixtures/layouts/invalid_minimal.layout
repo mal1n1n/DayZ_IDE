@@ -1,0 +1,13 @@
+FrameWidgetClass rootFrame {
+ size 1 1
+ {
+  ImageWidgetClass Duplicate {
+   size -1 0.2
+   image0 "Missing/gui/data/nope.edds"
+  }
+  TextWidgetClass Duplicate {
+   size 0.3 0.1
+   text "#STR_MISSING"
+  }
+ }
+}
