@@ -9,27 +9,20 @@ import {
   buildLayoutDiffReport,
   buildLayoutPreviewModel,
   buildLayoutTransformPatch,
-  buildTextureConversionPlan,
-  buildToolchainReadinessReport,
-  buildEngineCapturePlan,
-  buildEngineLaunchPlan,
-  buildEnginePreviewWorkspace,
   buildFontCoverageReport,
-  buildGeometryDiffReport,
-  buildPboWorkflowPlan,
   buildPluginRuntimePackage,
   buildPluginRuntimeRegistry,
   buildPluginSdkReport,
-  buildWorkshopPublishPlan,
   buildPreviewData,
   buildProjectAssetIndex,
   createEditTransaction,
+  composeLayoutSource,
   createWidget,
   deleteWidget,
-  diffPngFiles,
   fontRegistryToJson,
   generateControllerSkeleton,
   generateLayoutPatch,
+  hashSource,
   importFontAsset,
   importImageAsset,
   installPluginRuntimeTrust,
@@ -47,10 +40,6 @@ import {
   resolveLayoutPatchConflicts,
   resolveImageReference,
   runPluginRuntimeCommand,
-  runEngineCaptureWorkflow,
-  runPboWorkflow,
-  runWorkshopPublishWorkflow,
-  runTextureConversionWorkflow,
   styleFileToJson,
   summarizeLayout,
   updateWidgetProperty,
@@ -60,7 +49,6 @@ import {
   validateLayoutDocument,
   validateProject,
   verifyPluginRuntimePackage,
-  writeEnginePreviewWorkspace,
   writePluginRuntimePackage,
   writeProjectSettings,
 } from "../../core/src/index.mjs";
@@ -350,226 +338,6 @@ const tools = [
     },
   },
   {
-    name: "toolchain_readiness",
-    description: "Return one safe readiness report for DayZ Tools, project validation, build, Workshop publish, engine capture, and texture conversion workflows.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        projectRoot: { type: "string", description: "Project root. Defaults to server --project when set." },
-        layoutPath: { type: "string", description: "Layout file used for engine preview/capture readiness." },
-        addonSource: { type: "string", description: "Addon source folder for PBO build readiness." },
-        outputRoot: { type: "string", description: "Build output folder." },
-        prefix: { type: "string", description: "PBO prefix." },
-        toolsRoot: { type: "string", description: "DayZ Tools root." },
-        dayzRoot: { type: "string", description: "DayZ game root." },
-        pDrive: { type: "string", description: "P drive root." },
-        pboPath: { type: "string", description: "Built PBO path for Workshop readiness." },
-        contentRoot: { type: "string", description: "Workshop content root." },
-        workshopItemId: { type: "string", description: "Existing Workshop item id." },
-        title: { type: "string", description: "Workshop title metadata." },
-        changeNote: { type: "string", description: "Workshop change note." },
-        changeNoteFile: { type: "string", description: "Workshop change note file." },
-        previewImage: { type: "string", description: "Workshop preview image." },
-        workshopCommand: { type: "object", description: "Optional Publisher command template." },
-        sourceImage: { type: "string", description: "Texture source image for conversion readiness." },
-        textureOutputPath: { type: "string", description: "Texture conversion output path." },
-        textureFormat: { type: "string", description: "Texture target format, e.g. paa or edds." },
-        converterPath: { type: "string", description: "Explicit ImageToPAA.exe path." },
-        textureCommand: { type: "object", description: "Optional texture converter command template." },
-        captureCommand: { type: "object", description: "Optional engine capture command template." },
-        captureOutputRoot: { type: "string", description: "Engine capture output root." },
-        allowDiagnostics: { type: "boolean", description: "Treat project validation diagnostics as warnings for readiness scoring." },
-        requirePbo: { type: "boolean", description: "Set false to skip the built PBO existence check." },
-      },
-    },
-  },
-  {
-    name: "build_plan",
-    description: "Create a safe PBO build workflow plan and manifest without running external tools.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        projectRoot: { type: "string", description: "Project root. Defaults to server --project when set." },
-        addonSource: { type: "string", description: "Addon source folder. Defaults to project root." },
-        outputRoot: { type: "string", description: "Build output folder." },
-        prefix: { type: "string", description: "PBO prefix." },
-        allowDiagnostics: { type: "boolean", description: "Allow a plan to be ready even with validation diagnostics." },
-      },
-    },
-  },
-  {
-    name: "engine_launch_plan",
-    description: "Create a Workbench or DayZDiag launch plan for engine-fidelity preview without running external tools.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        projectRoot: { type: "string", description: "Project root. Defaults to server --project when set." },
-        layoutPath: { type: "string", description: "Layout file to preview." },
-        mode: { type: "string", enum: ["dayzDiag", "workbench"], description: "Launch target. Defaults to dayzDiag." },
-        missionPath: { type: "string", description: "Temporary preview mission folder." },
-        toolsRoot: { type: "string", description: "DayZ Tools root." },
-        dayzRoot: { type: "string", description: "DayZ game root." },
-        pDrive: { type: "string", description: "P drive root." },
-      },
-    },
-  },
-  {
-    name: "engine_preview_workspace",
-    description: "Generate the temporary .dzui/engine-preview mission workspace for engine-fidelity preview. Dry-run by default; set write=true to create files.",
-    inputSchema: {
-      type: "object",
-      required: ["layoutPath"],
-      properties: {
-        projectRoot: { type: "string", description: "Project root. Defaults to server --project when set." },
-        layoutPath: { type: "string", description: "Layout file to load in the preview mission." },
-        previewRoot: { type: "string", description: "Output root. Defaults to <project>/.dzui/engine-preview." },
-        missionName: { type: "string", description: "Mission folder base name. Defaults to dzui_preview." },
-        worldName: { type: "string", description: "Mission world suffix. Defaults to ChernarusPlus." },
-        menuClass: { type: "string", description: "Generated UIScriptedMenu class name." },
-        width: { type: "number", description: "Preview viewport width metadata." },
-        height: { type: "number", description: "Preview viewport height metadata." },
-        language: { type: "string", description: "Preview language metadata." },
-        toolsRoot: { type: "string", description: "DayZ Tools root." },
-        dayzRoot: { type: "string", description: "DayZ game root." },
-        pDrive: { type: "string", description: "P drive root." },
-        write: { type: "boolean", description: "Write generated workspace files when true." },
-      },
-    },
-  },
-  {
-    name: "engine_geometry_diff",
-    description: "Compare DZUI preview geometry against a DayZ engine geometry dump. Provide engineDump or engineDumpFile.",
-    inputSchema: {
-      type: "object",
-      required: ["layoutPath"],
-      properties: {
-        layoutPath: { type: "string", description: "Layout file to render as the DZUI preview model." },
-        projectRoot: { type: "string", description: "Project root for asset/stringtable context. Defaults to server --project when set." },
-        engineDump: { type: "object", description: "Engine geometry dump object with widgets/nodes." },
-        engineDumpFile: { type: "string", description: "Path to a JSON geometry dump file." },
-        width: { type: "number", description: "Preview viewport width." },
-        height: { type: "number", description: "Preview viewport height." },
-        language: { type: "string", description: "Preview language." },
-        tolerancePx: { type: "number", description: "Allowed geometry delta in pixels. Defaults to 1." },
-      },
-    },
-  },
-  {
-    name: "engine_pixel_diff",
-    description: "Compare two PNG screenshots and optionally write a visual diff PNG.",
-    inputSchema: {
-      type: "object",
-      required: ["expectedPath", "actualPath"],
-      properties: {
-        expectedPath: { type: "string", description: "Expected/DZUI PNG screenshot path." },
-        actualPath: { type: "string", description: "Actual/engine PNG screenshot path." },
-        diffPath: { type: "string", description: "Optional output PNG path for visual diff." },
-        tolerance: { type: "number", description: "Allowed per-channel delta, 0-255. Defaults to 0." },
-        ignoreAlpha: { type: "boolean", description: "Ignore alpha channel differences." },
-      },
-    },
-  },
-  {
-    name: "engine_capture_workflow",
-    description: "Plan or run the engine capture workflow: launch command, collect screenshot/geometry outputs, and write diff reports. Dry-run plan by default; set execute=true to run.",
-    inputSchema: {
-      type: "object",
-      required: ["projectRoot", "layoutPath"],
-      properties: {
-        projectRoot: { type: "string", description: "Project root." },
-        layoutPath: { type: "string", description: "Layout file to preview." },
-        command: { type: "object", description: "{ executable, args, cwd } override for testing/custom capture." },
-        outputRoot: { type: "string", description: "Capture output root." },
-        expectedScreenshotPath: { type: "string", description: "Expected DZUI screenshot path." },
-        actualScreenshotPath: { type: "string", description: "Actual engine screenshot path." },
-        geometryDumpPath: { type: "string", description: "Engine geometry dump JSON path." },
-        pixelDiffPath: { type: "string", description: "Visual pixel diff PNG path." },
-        geometryTolerancePx: { type: "number", description: "Geometry tolerance in px." },
-        pixelTolerance: { type: "number", description: "Pixel channel tolerance." },
-        timeoutMs: { type: "number", description: "Capture command timeout." },
-        waitMs: { type: "number", description: "Wait after command for output files." },
-        execute: { type: "boolean", description: "When true, run the capture command." },
-      },
-    },
-  },
-  {
-    name: "build_run",
-    description: "Run the AddonBuilder PBO workflow with log capture. Dry-run by default; set execute=true to run external tools.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        projectRoot: { type: "string", description: "Project root. Defaults to server --project when set." },
-        addonSource: { type: "string", description: "Addon source folder. Defaults to project root." },
-        outputRoot: { type: "string", description: "Build output folder." },
-        prefix: { type: "string", description: "PBO prefix." },
-        toolsRoot: { type: "string", description: "DayZ Tools root containing Bin/AddonBuilder." },
-        dayzRoot: { type: "string", description: "DayZ game root." },
-        pDrive: { type: "string", description: "P drive root." },
-        allowDiagnostics: { type: "boolean", description: "Allow a plan to be ready even with validation diagnostics." },
-        allowNotReady: { type: "boolean", description: "Attempt execution even when the plan reports missing requirements." },
-        timeoutMs: { type: "number", description: "External tool timeout in milliseconds." },
-        execute: { type: "boolean", description: "When true, run AddonBuilder. Otherwise return the plan only." },
-      },
-    },
-  },
-  {
-    name: "workshop_publish_plan",
-    description: "Create a Workshop publish/update plan for PublisherCmd or a custom publish command without running external tools.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        projectRoot: { type: "string", description: "Project root. Defaults to server --project when set." },
-        addonSource: { type: "string", description: "Addon source folder used to infer the build output PBO." },
-        outputRoot: { type: "string", description: "Build output folder used as the default Workshop content root." },
-        prefix: { type: "string", description: "PBO prefix for the linked build plan." },
-        pboPath: { type: "string", description: "Explicit built PBO path to verify before publishing." },
-        contentRoot: { type: "string", description: "Folder passed to PublisherCmd /path. Defaults to build output root." },
-        workshopItemId: { type: "string", description: "Existing Steam Workshop item id for PublisherCmd update." },
-        title: { type: "string", description: "Workshop title metadata for custom command templates." },
-        changeNote: { type: "string", description: "PublisherCmd /changeNote value." },
-        changeNoteFile: { type: "string", description: "PublisherCmd /changeNoteFile path." },
-        previewImage: { type: "string", description: "Preview image metadata for custom command templates." },
-        command: { type: "object", description: "Optional { executable, args, cwd, env } template. Supports {pboPath}, {contentRoot}, {workshopItemId}, and related placeholders." },
-        commandFile: { type: "string", description: "Path to a JSON command template file." },
-        toolsRoot: { type: "string", description: "DayZ Tools root containing PublisherCmd." },
-        dayzRoot: { type: "string", description: "DayZ game root." },
-        pDrive: { type: "string", description: "P drive root." },
-        allowDiagnostics: { type: "boolean", description: "Allow the plan to be ready with validation diagnostics." },
-        requirePbo: { type: "boolean", description: "Set false to skip the built PBO existence check." },
-      },
-    },
-  },
-  {
-    name: "workshop_publish_run",
-    description: "Run the Workshop publish/update workflow with log capture. Dry-run by default; set execute=true to run PublisherCmd or the custom command.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        projectRoot: { type: "string", description: "Project root. Defaults to server --project when set." },
-        addonSource: { type: "string", description: "Addon source folder used to infer the build output PBO." },
-        outputRoot: { type: "string", description: "Build output folder used as the default Workshop content root." },
-        prefix: { type: "string", description: "PBO prefix for the linked build plan." },
-        pboPath: { type: "string", description: "Explicit built PBO path to verify before publishing." },
-        contentRoot: { type: "string", description: "Folder passed to PublisherCmd /path. Defaults to build output root." },
-        workshopItemId: { type: "string", description: "Existing Steam Workshop item id for PublisherCmd update." },
-        title: { type: "string", description: "Workshop title metadata for custom command templates." },
-        changeNote: { type: "string", description: "PublisherCmd /changeNote value." },
-        changeNoteFile: { type: "string", description: "PublisherCmd /changeNoteFile path." },
-        previewImage: { type: "string", description: "Preview image metadata for custom command templates." },
-        command: { type: "object", description: "Optional { executable, args, cwd, env } template. Supports {pboPath}, {contentRoot}, {workshopItemId}, and related placeholders." },
-        commandFile: { type: "string", description: "Path to a JSON command template file." },
-        toolsRoot: { type: "string", description: "DayZ Tools root containing PublisherCmd." },
-        dayzRoot: { type: "string", description: "DayZ game root." },
-        pDrive: { type: "string", description: "P drive root." },
-        allowDiagnostics: { type: "boolean", description: "Allow the plan to be ready with validation diagnostics." },
-        allowNotReady: { type: "boolean", description: "Attempt execution even when the plan reports missing requirements." },
-        requirePbo: { type: "boolean", description: "Set false to skip the built PBO existence check." },
-        timeoutMs: { type: "number", description: "External tool timeout in milliseconds." },
-        execute: { type: "boolean", description: "When true, run PublisherCmd/custom command. Otherwise return the plan only." },
-      },
-    },
-  },
-  {
     name: "script_generate_controller",
     description: "Generate an Enforce Script controller skeleton from a .layout file.",
     inputSchema: {
@@ -690,40 +458,6 @@ const tools = [
     },
   },
   {
-    name: "texture_convert_plan",
-    description: "Create a PNG/TGA to PAA or custom EDDS texture conversion plan without running external tools.",
-    inputSchema: {
-      type: "object",
-      required: ["sourceImage"],
-      properties: {
-        sourceImage: { type: "string", description: "Source image path, usually a PNG atlas or imported PNG." },
-        outputPath: { type: "string", description: "Target output path. Defaults to source with .paa." },
-        format: { type: "string", description: "Target format, e.g. paa or edds." },
-        toolsRoot: { type: "string", description: "DayZ Tools root containing ImageToPAA." },
-        converterPath: { type: "string", description: "Explicit ImageToPAA.exe path." },
-        command: { type: "object", description: "Custom converter command template with {source}, {out}, and {format} placeholders." },
-      },
-    },
-  },
-  {
-    name: "texture_convert_run",
-    description: "Run PNG/TGA to PAA or custom EDDS texture conversion with log capture. Dry-run readiness gate unless allowNotReady=true.",
-    inputSchema: {
-      type: "object",
-      required: ["sourceImage"],
-      properties: {
-        sourceImage: { type: "string", description: "Source image path, usually a PNG atlas or imported PNG." },
-        outputPath: { type: "string", description: "Target output path. Defaults to source with .paa." },
-        format: { type: "string", description: "Target format, e.g. paa or edds." },
-        toolsRoot: { type: "string", description: "DayZ Tools root containing ImageToPAA." },
-        converterPath: { type: "string", description: "Explicit ImageToPAA.exe path." },
-        command: { type: "object", description: "Custom converter command template with {source}, {out}, and {format} placeholders." },
-        timeoutMs: { type: "number", description: "External converter timeout." },
-        allowNotReady: { type: "boolean", description: "Attempt execution even when the plan has missing requirements." },
-      },
-    },
-  },
-  {
     name: "preview_model",
     description: "Build the canvas preview model for a layout with optional project asset resolution.",
     inputSchema: {
@@ -749,6 +483,30 @@ const tools = [
       properties: {
         root: { type: "string", description: "Project root." },
         ref: { type: "string", description: "Image reference to resolve." },
+      },
+    },
+  },
+  {
+    name: "layout_compose",
+    description: "Compose a complete .layout file from a structured widget spec. Dry-run by default; write=true creates/replaces the file with history and overwrite guards.",
+    inputSchema: {
+      type: "object",
+      required: ["file", "spec"],
+      properties: {
+        file: { type: "string", description: "Target .layout file path." },
+        spec: {
+          type: "object",
+          description: "Layout spec with root or roots. Widgets use typeClass/type, name, props/properties, and children/widgets.",
+        },
+        project: { type: "string", description: "Optional project root for validation diagnostics." },
+        newline: { type: "string", enum: ["\n", "\r\n"], description: "Line ending for generated source. Defaults to LF." },
+        indent: { type: "string", description: "Indent unit. Defaults to one space to match existing DayZ layout fixtures." },
+        write: { type: "boolean", description: "When true, write the composed layout to disk." },
+        includeSource: { type: "boolean", description: "Include generated source in the response." },
+        allowOverwrite: { type: "boolean", description: "Required to replace an existing file when write=true unless beforeHash matches." },
+        beforeHash: { type: "string", description: "Expected hash of the existing file before replacement." },
+        allowHashMismatch: { type: "boolean", description: "Allow beforeHash mismatch when replacing." },
+        allowDiagnostics: { type: "boolean", description: "Allow writing a generated layout that has parser diagnostics." },
       },
     },
   },
@@ -930,11 +688,38 @@ const promptTemplates = [
         "",
         "Workflow:",
         "1. Inspect current structure with layout_inspect and preview_model.",
-        "2. Prefer specific write tools: layout_update_property, layout_create_widget, layout_delete_widget, layout_reparent_widget, layout_transform, or layout_apply_patch.",
+        "2. Prefer specific write tools: layout_update_property, layout_create_widget, layout_delete_widget, layout_reparent_widget, layout_transform, layout_compose, or layout_apply_patch.",
         "3. Always dry-run first with write=false and includeSource=true when useful.",
         "4. Validate the resulting layout before any write.",
-        "5. Write only after the dry-run result is coherent; preserve transaction metadata/history.",
+        "4. Write only after the dry-run result is coherent; preserve transaction metadata/history.",
         "6. Summarize changed widgets, validation status, and any remaining risks.",
+      ].join("\n");
+    },
+  },
+  {
+    name: "dayz_ui_layout_from_brief",
+    description: "Turn a natural-language UI brief into a structured DayZ .layout draft using layout_compose, preview, and validation.",
+    arguments: [
+      { name: "projectRoot", description: "Project root for assets/styles/fonts/stringtable.", required: true },
+      { name: "layoutFile", description: "Target .layout file to create or replace.", required: true },
+      { name: "brief", description: "Natural-language description of the screen, HUD, dialog, or panel.", required: true },
+      { name: "viewport", description: "Optional target viewport, e.g. 1280x720.", required: false },
+    ],
+    render(args) {
+      return [
+        "Create a DayZ .layout draft from this brief using safe MCP tools.",
+        "",
+        `Project root: ${requiredPromptArg(args, "projectRoot")}`,
+        `Target layout file: ${requiredPromptArg(args, "layoutFile")}`,
+        `Viewport: ${args.viewport || "1280x720"}`,
+        `Brief: ${requiredPromptArg(args, "brief")}`,
+        "",
+        "Workflow:",
+        "1. Run project_scan and layout_widget_palette to understand available assets and widget presets.",
+        "2. Build a structured layout_compose spec with root/roots, typeClass, name, props, and children. Do not hand-write raw .layout source unless the tool cannot express the structure.",
+        "3. Dry-run layout_compose with includeSource=true. For an existing file, use the returned beforeHash for the later write instead of blind overwrite.",
+        "4. Run preview_model and layout_validate against the dry-run source or written file; resolve obvious geometry, image, stringtable, style, and font issues.",
+        "4. Write only after the dry-run source is parseable and coherent, then summarize created widgets and remaining fidelity gaps.",
       ].join("\n");
     },
   },
@@ -957,7 +742,6 @@ const promptTemplates = [
         "Relevant tools:",
         "- image_import for copying a source image and updating an .imageset.",
         "- atlas_pack for packing multiple PNG sprites into one atlas plus .imageset.",
-        "- texture_convert_plan / texture_convert_run for ImageToPAA or custom EDDS/PAA conversion.",
         "- font_import and font_check_layout for font assets and glyph coverage.",
         "- asset_resolve and project_validate to verify references.",
         "Prefer dry-run first for MCP write tools, then write=true only when paths and diagnostics are acceptable.",
@@ -965,51 +749,28 @@ const promptTemplates = [
     },
   },
   {
-    name: "dayz_ui_build_release",
-    description: "Prepare build, readiness, and Workshop publish/update steps for a DayZ UI mod.",
+    name: "dayz_ui_image_port",
+    description: "Port UI images into a DayZ project by importing PNGs, updating imagesets, packing atlases, and planning runtime texture conversion.",
     arguments: [
       { name: "projectRoot", description: "Project root.", required: true },
-      { name: "workshopItemId", description: "Optional Workshop item id for update.", required: false },
-      { name: "changeNote", description: "Optional Workshop change note.", required: false },
+      { name: "sourcePath", description: "Source PNG or folder/list description.", required: true },
+      { name: "targetAsset", description: "Target virtual asset path or folder, e.g. gui/data/hud_atlas.png.", required: true },
+      { name: "layoutFile", description: "Optional layout file that should use the imported image refs.", required: false },
     ],
     render(args) {
       return [
-        "Prepare a build/release workflow for this DayZ UI project.",
+        "Port these UI image assets into a DayZ UI project with verifiable references.",
         "",
         `Project root: ${requiredPromptArg(args, "projectRoot")}`,
-        `Workshop item id: ${args.workshopItemId || "not provided"}`,
-        `Change note: ${args.changeNote || "not provided"}`,
+        `Source path: ${requiredPromptArg(args, "sourcePath")}`,
+        `Target asset: ${requiredPromptArg(args, "targetAsset")}`,
+        `Layout file: ${args.layoutFile || "not provided"}`,
         "",
         "Workflow:",
-        "1. Run toolchain_readiness with build/publish inputs.",
-        "2. Run project_validate and inspect diagnostics.",
-        "3. Use build_plan before build_run; do not execute external tools unless explicitly requested.",
-        "4. Use workshop_publish_plan before workshop_publish_run; require clear item id/change note/content root.",
-        "5. Return readiness percent, missing requirements, command previews, and log/output paths.",
-      ].join("\n");
-    },
-  },
-  {
-    name: "dayz_ui_engine_fidelity",
-    description: "Plan DayZDiag/Workbench preview capture and compare DZUI geometry/pixels against engine output.",
-    arguments: [
-      { name: "projectRoot", description: "Project root.", required: true },
-      { name: "layoutFile", description: "Layout file to preview.", required: true },
-      { name: "mode", description: "Optional mode: dayzDiag or workbench.", required: false },
-    ],
-    render(args) {
-      return [
-        "Set up and evaluate engine fidelity for this DayZ UI layout.",
-        "",
-        `Project root: ${requiredPromptArg(args, "projectRoot")}`,
-        `Layout file: ${requiredPromptArg(args, "layoutFile")}`,
-        `Mode: ${args.mode || "dayzDiag"}`,
-        "",
-        "Workflow:",
-        "1. Use engine_launch_plan and engine_preview_workspace to inspect the launch/workspace plan.",
-        "2. Use engine_capture_workflow as a plan first; execute only with explicit approval or a configured command.",
-        "3. Use engine_geometry_diff and engine_pixel_diff for provided dumps/screenshots.",
-        "4. Report command readiness, generated workspace files, geometry deltas, pixel summary, and next capture-hardening steps.",
+        "1. Run project_scan and inspect existing .imageset names before choosing set/image ids.",
+        "2. For one image, dry-run image_import; for multiple sprites, dry-run atlas_pack and inspect generated set refs.",
+        "3. Use asset_resolve and project_validate to verify imported refs. If layoutFile is provided, update image0/imageN via layout_update_property or include the set refs in a layout_compose dry-run.",
+        "4. Write only after paths, sprite sizes, and generated refs match the intended layout usage.",
       ].join("\n");
     },
   },
@@ -1371,142 +1132,6 @@ async function callTool(params) {
       settings,
     });
   }
-  if (name === "toolchain_readiness") {
-    return toolResult(buildToolchainReadinessReport({
-      projectRoot: input.projectRoot ? resolveProjectRoot(input.projectRoot) : defaultProjectRoot,
-      layoutPath: input.layoutPath,
-      addonSource: input.addonSource,
-      outputRoot: input.outputRoot,
-      prefix: input.prefix,
-      toolsRoot: input.toolsRoot,
-      dayzRoot: input.dayzRoot,
-      pDrive: input.pDrive,
-      pboPath: input.pboPath,
-      contentRoot: input.contentRoot,
-      workshopItemId: input.workshopItemId ?? input.itemId,
-      title: input.title,
-      changeNote: input.changeNote,
-      changeNoteFile: input.changeNoteFile,
-      previewImage: input.previewImage,
-      workshopCommand: input.workshopCommand,
-      sourceImage: input.sourceImage,
-      textureOutputPath: input.textureOutputPath,
-      textureFormat: input.textureFormat,
-      converterPath: input.converterPath,
-      textureCommand: input.textureCommand,
-      captureCommand: input.captureCommand,
-      captureOutputRoot: input.captureOutputRoot,
-      allowDiagnostics: input.allowDiagnostics === true,
-      requirePbo: input.requirePbo === false ? false : undefined,
-    }));
-  }
-  if (name === "build_plan") {
-    return toolResult(buildPboWorkflowPlan({
-      projectRoot: resolveProjectRoot(input.projectRoot),
-      addonSource: input.addonSource,
-      outputRoot: input.outputRoot,
-      prefix: input.prefix,
-      toolsRoot: input.toolsRoot,
-      dayzRoot: input.dayzRoot,
-      pDrive: input.pDrive,
-      allowDiagnostics: input.allowDiagnostics === true,
-    }));
-  }
-  if (name === "build_run") {
-    const options = {
-      projectRoot: resolveProjectRoot(input.projectRoot),
-      addonSource: input.addonSource,
-      outputRoot: input.outputRoot,
-      prefix: input.prefix,
-      toolsRoot: input.toolsRoot,
-      dayzRoot: input.dayzRoot,
-      pDrive: input.pDrive,
-      allowDiagnostics: input.allowDiagnostics === true,
-      allowNotReady: input.allowNotReady === true,
-      timeoutMs: typeof input.timeoutMs === "number" ? input.timeoutMs : undefined,
-    };
-    if (input.execute !== true) {
-      return toolResult({
-        execute: false,
-        plan: buildPboWorkflowPlan(options),
-      });
-    }
-    return toolResult(runPboWorkflow(options));
-  }
-  if (name === "workshop_publish_plan") {
-    return toolResult(buildWorkshopPublishPlan(readWorkshopPublishOptions(input)));
-  }
-  if (name === "workshop_publish_run") {
-    const options = readWorkshopPublishOptions(input);
-    if (input.execute !== true) {
-      return toolResult({
-        execute: false,
-        plan: buildWorkshopPublishPlan(options),
-      });
-    }
-    return toolResult(runWorkshopPublishWorkflow(options));
-  }
-  if (name === "engine_launch_plan") {
-    return toolResult(buildEngineLaunchPlan({
-      mode: input.mode,
-      projectRoot: resolveProjectRoot(input.projectRoot),
-      layoutPath: input.layoutPath,
-      missionPath: input.missionPath,
-      toolsRoot: input.toolsRoot,
-      dayzRoot: input.dayzRoot,
-      pDrive: input.pDrive,
-    }));
-  }
-  if (name === "engine_preview_workspace") {
-    const options = {
-      projectRoot: resolveProjectRoot(input.projectRoot),
-      layoutPath: requireString(input.layoutPath, "layoutPath"),
-      previewRoot: input.previewRoot,
-      missionName: input.missionName,
-      worldName: input.worldName,
-      menuClass: input.menuClass,
-      width: input.width,
-      height: input.height,
-      language: input.language,
-      toolsRoot: input.toolsRoot,
-      dayzRoot: input.dayzRoot,
-      pDrive: input.pDrive,
-    };
-    return toolResult(input.write === true
-      ? notifyToolResult(writeEnginePreviewWorkspace(options), { listChanged: true })
-      : buildEnginePreviewWorkspace(options));
-  }
-  if (name === "engine_geometry_diff") {
-    return toolResult(buildEngineGeometryDiff(input));
-  }
-  if (name === "engine_pixel_diff") {
-    return toolResult(diffPngFiles({
-      expectedPath: requireString(input.expectedPath, "expectedPath"),
-      actualPath: requireString(input.actualPath, "actualPath"),
-      diffPath: input.diffPath,
-      tolerance: Number(input.tolerance ?? 0),
-      ignoreAlpha: input.ignoreAlpha === true,
-    }));
-  }
-  if (name === "engine_capture_workflow") {
-    const options = {
-      projectRoot: requireString(input.projectRoot, "projectRoot"),
-      layoutPath: requireString(input.layoutPath, "layoutPath"),
-      command: input.command,
-      outputRoot: input.outputRoot,
-      expectedScreenshotPath: input.expectedScreenshotPath,
-      actualScreenshotPath: input.actualScreenshotPath,
-      geometryDumpPath: input.geometryDumpPath,
-      pixelDiffPath: input.pixelDiffPath,
-      geometryTolerancePx: input.geometryTolerancePx,
-      pixelTolerance: input.pixelTolerance,
-      timeoutMs: input.timeoutMs,
-      waitMs: input.waitMs,
-    };
-    return toolResult(input.execute === true
-      ? runEngineCaptureWorkflow(options)
-      : buildEngineCapturePlan(options));
-  }
   if (name === "script_generate_controller") {
     return toolResult(generateController(input));
   }
@@ -1532,6 +1157,9 @@ async function callTool(params) {
     const ref = requireString(input.ref, "ref");
     const projectIndex = buildProjectAssetIndex(root);
     return toolResult(resolveImageReference(ref, projectIndex));
+  }
+  if (name === "layout_compose") {
+    return toolResult(composeLayout(input));
   }
   if (name === "layout_update_property") {
     return toolResult(updateLayoutProperty(input));
@@ -1573,42 +1201,8 @@ async function callTool(params) {
   if (name === "atlas_pack") {
     return toolResult(packAtlas(input));
   }
-  if (name === "texture_convert_plan") {
-    return toolResult(buildTextureConversionPlan(readTextureConversionInput(input)));
-  }
-  if (name === "texture_convert_run") {
-    return toolResult(runTextureConversionWorkflow({
-      ...readTextureConversionInput(input),
-      timeoutMs: typeof input.timeoutMs === "number" ? input.timeoutMs : undefined,
-      allowNotReady: input.allowNotReady === true,
-    }));
-  }
 
   throw Object.assign(new Error(`Unknown tool: ${name}`), { code: -32602 });
-}
-
-function readWorkshopPublishOptions(input) {
-  return {
-    projectRoot: resolveProjectRoot(input.projectRoot),
-    addonSource: input.addonSource,
-    outputRoot: input.outputRoot,
-    prefix: input.prefix,
-    toolsRoot: input.toolsRoot,
-    dayzRoot: input.dayzRoot,
-    pDrive: input.pDrive,
-    pboPath: input.pboPath,
-    contentRoot: input.contentRoot,
-    workshopItemId: input.workshopItemId ?? input.itemId,
-    title: input.title,
-    changeNote: input.changeNote,
-    changeNoteFile: input.changeNoteFile,
-    previewImage: input.previewImage,
-    command: input.command ?? (input.commandFile ? readJsonFile(input.commandFile) : undefined),
-    allowDiagnostics: input.allowDiagnostics === true,
-    allowNotReady: input.allowNotReady === true,
-    requirePbo: input.requirePbo === false ? false : undefined,
-    timeoutMs: typeof input.timeoutMs === "number" ? input.timeoutMs : undefined,
-  };
 }
 
 function updateImageSet(input) {
@@ -1686,17 +1280,6 @@ function packAtlas(input) {
   return result;
 }
 
-function readTextureConversionInput(input) {
-  return {
-    sourceImage: requireString(input.sourceImage, "sourceImage"),
-    outputPath: input.outputPath,
-    format: input.format,
-    toolsRoot: input.toolsRoot,
-    converterPath: input.converterPath,
-    command: input.command,
-  };
-}
-
 function generateController(input) {
   const filePath = path.resolve(requireString(input.file, "file"));
   const document = readLayout(filePath);
@@ -1720,23 +1303,6 @@ function generateController(input) {
     notifyProjectResourcesForWrite(out, { listChanged: true });
   }
   return response;
-}
-
-function buildEngineGeometryDiff(input) {
-  const layoutPath = path.resolve(requireString(input.layoutPath, "layoutPath"));
-  const projectRoot = input.projectRoot ? path.resolve(input.projectRoot) : defaultProjectRoot;
-  const projectIndex = projectRoot ? buildProjectAssetIndex(projectRoot) : null;
-  const document = readLayout(layoutPath);
-  const model = buildLayoutPreviewModel(document, {
-    width: Number(input.width ?? 1280),
-    height: Number(input.height ?? 720),
-    projectIndex,
-    language: input.language ?? "English",
-  });
-  const engineDump = input.engineDump ?? readJsonFile(requireString(input.engineDumpFile, "engineDumpFile"));
-  return buildGeometryDiffReport(model, engineDump, {
-    tolerancePx: Number(input.tolerancePx ?? 1),
-  });
 }
 
 function updateStringTable(input) {
@@ -1960,6 +1526,78 @@ function transformLayout(input) {
   return response;
 }
 
+function composeLayout(input) {
+  const filePath = path.resolve(requireString(input.file, "file"));
+  const existed = fs.existsSync(filePath);
+  if (existed && !fs.statSync(filePath).isFile()) {
+    throw Object.assign(new Error(`Layout target is not a file: ${filePath}`), { code: -32602 });
+  }
+
+  const beforeSource = existed ? fs.readFileSync(filePath, "utf8") : "";
+  const beforeHash = existed ? hashSource(beforeSource) : null;
+  if (input.beforeHash && beforeHash !== input.beforeHash && input.allowHashMismatch !== true) {
+    throw Object.assign(new Error(`Existing layout hash mismatch. Expected ${input.beforeHash}, got ${beforeHash ?? "new-file"}.`), { code: -32602 });
+  }
+  if (input.write === true && existed && !input.beforeHash && input.allowOverwrite !== true) {
+    throw Object.assign(new Error(`Refusing to replace existing layout without beforeHash or allowOverwrite=true. Current beforeHash: ${beforeHash}`), { code: -32602 });
+  }
+
+  const composed = composeLayoutSource(input.spec, {
+    filePath,
+    newline: input.newline,
+    indent: input.indent,
+  });
+  if (!composed.ok && input.allowDiagnostics !== true) {
+    throw Object.assign(new Error("Composed layout has parser diagnostics. Set allowDiagnostics=true to write anyway."), { code: -32602 });
+  }
+
+  const projectRoot = input.project ? resolveProjectRoot(input.project) : defaultProjectRoot;
+  const projectIndex = projectRoot ? buildProjectAssetIndex(projectRoot) : null;
+  const document = parseLayout(composed.source, { filePath });
+  const validationDiagnostics = projectIndex
+    ? validateLayoutDocument(document, { projectIndex })
+    : [];
+  const transaction = createEditTransaction({
+    filePath,
+    beforeSource,
+    afterSource: composed.source,
+    edit: {
+      type: "layout-compose",
+      existed,
+      rootCount: composed.rootCount,
+      widgetCount: composed.widgetCount,
+    },
+    label: "MCP compose layout",
+  });
+  const response = {
+    written: false,
+    filePath,
+    existed,
+    transactionId: transaction.id,
+    beforeHash,
+    afterHash: transaction.after.hash,
+    rootCount: composed.rootCount,
+    widgetCount: composed.widgetCount,
+    diagnosticCount: composed.diagnostics.length + validationDiagnostics.length,
+    diagnostics: [
+      ...composed.diagnostics,
+      ...validationDiagnostics,
+    ],
+  };
+
+  if (input.write === true) {
+    const historyPath = writeHistoryTransaction(transaction);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, composed.source, "utf8");
+    response.written = true;
+    response.historyPath = historyPath;
+    notifyProjectResourcesForWrite(filePath, { listChanged: !existed });
+  }
+
+  if (input.includeSource === true) response.source = composed.source;
+  return response;
+}
+
 function applyLayoutStructuralEdit(input, operation) {
   const filePath = path.resolve(requireString(input.file, "file"));
   if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
@@ -2136,12 +1774,6 @@ function listResources() {
         description: "Project validation report for layouts, scripts, assets, and stringtable references.",
         mimeType: "application/json",
       },
-      {
-        uri: "dayzui://project/toolchain-readiness",
-        name: "Toolchain readiness",
-        description: "Readiness report for DayZ Tools, build, Workshop, texture conversion, and engine capture workflows.",
-        mimeType: "application/json",
-      },
       ...fileResources,
     ],
   };
@@ -2186,9 +1818,6 @@ function readResource(params) {
   }
   if (uri === "dayzui://project/validation") {
     return jsonResource(uri, validateProject(defaultProjectRoot));
-  }
-  if (uri === "dayzui://project/toolchain-readiness") {
-    return jsonResource(uri, buildToolchainReadinessReport({ projectRoot: defaultProjectRoot }));
   }
   if (uri.startsWith("dayzui://project/file?")) {
     const filePath = resolveProjectFileResource(uri);
@@ -2236,7 +1865,6 @@ function notifyProjectResourcesForWrite(filePath = null, options = {}) {
     "dayzui://project/files",
     "dayzui://project/asset-index",
     "dayzui://project/validation",
-    "dayzui://project/toolchain-readiness",
   ]);
   if (options.settingsChanged || isProjectSettingsFile(filePath)) {
     updated.add("dayzui://project/settings");

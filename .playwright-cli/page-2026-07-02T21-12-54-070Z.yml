@@ -1,0 +1,706 @@
+- generic [ref=e2]:
+  - navigation "Workspace" [ref=e3]:
+    - generic [ref=e4]:
+      - strong [ref=e5]: DayZ IDE
+      - generic [ref=e6]: UI Editor
+    - button "Editor" [ref=e7] [cursor=pointer]
+    - button "Project" [ref=e8] [cursor=pointer]
+    - button "Assets" [ref=e9] [cursor=pointer]
+    - button "MCP" [ref=e10] [cursor=pointer]
+  - complementary [ref=e11]:
+    - generic [ref=e12]:
+      - generic [ref=e13]: Open Layout
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]: Layout file
+          - textbox "Layout file" [ref=e17]: C:/Users/user/source/repos/mal1n1n/MGStalker/src/ClientMods/MG_Stalker_GUI/gui/layouts/trader/trader_menu.layout
+        - generic [ref=e18]:
+          - generic [ref=e19]: Project root
+          - textbox "Project root" [ref=e20]:
+            - /placeholder: Optional ClientMods root
+            - text: C:/Users/user/source/repos/mal1n1n/MGStalker/src/ClientMods
+        - generic [ref=e21]:
+          - generic [ref=e22]: Recent projects
+          - combobox "Recent projects" [ref=e23]:
+            - option "Recent projects"
+            - option "C:/Users/user/source/repos/mal1n1n/MGStalker/src/ClientMods" [selected]
+            - option "C:\\Users\\user\\Documents\\DayZ Projects"
+        - generic [ref=e24]:
+          - generic [ref=e25]: Preview language
+          - combobox "Preview language" [ref=e26]:
+            - option "original" [selected]
+            - option "english"
+            - option "czech"
+            - option "german"
+            - option "russian"
+            - option "polish"
+            - option "hungarian"
+            - option "italian"
+            - option "spanish"
+            - option "french"
+            - option "chinese"
+            - option "japanese"
+            - option "portuguese"
+            - option "chinesesimp"
+            - option
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e29]: Width
+            - spinbutton "Width" [ref=e30]: "1280"
+          - generic [ref=e31]:
+            - generic [ref=e32]: Height
+            - spinbutton "Height" [ref=e33]: "720"
+        - button "Open Layout" [ref=e34] [cursor=pointer]
+        - generic [ref=e35]:
+          - button "Load Settings" [ref=e36] [cursor=pointer]
+          - button "Save Settings" [ref=e37] [cursor=pointer]
+      - generic [ref=e38]: Layout Tree
+      - generic [ref=e39]:
+        - generic [ref=e340]:
+          - text: rootFrame
+          - generic [ref=e341]: PanelWidgetClass
+        - generic [ref=e342]:
+          - text: GridSpacerWidget0
+          - generic [ref=e343]: GridSpacerWidgetClass
+        - generic [ref=e344]:
+          - text: TextWidget0
+          - generic [ref=e345]: TextWidgetClass
+        - generic [ref=e346]:
+          - text: ImageWidget0
+          - generic [ref=e347]: ImageWidgetClass
+        - generic [ref=e348]:
+          - text: GridSpacerWidget3
+          - generic [ref=e349]: PanelWidgetClass
+        - generic [ref=e350]:
+          - text: main
+          - generic [ref=e351]: GridSpacerWidgetClass
+        - generic [ref=e352]:
+          - text: GridSpacerWidget1
+          - generic [ref=e353]: GridSpacerWidgetClass
+        - generic [ref=e354]:
+          - text: vip_notif
+          - generic [ref=e355]: RichTextWidgetClass
+        - generic [ref=e356]:
+          - text: PanelWidget1
+          - generic [ref=e357]: PanelWidgetClass
+        - generic [ref=e358]:
+          - text: balance_panel
+          - generic [ref=e359]: PanelWidgetClass
+        - generic [ref=e360]:
+          - text: GridSpacerWidget2
+          - generic [ref=e361]: GridSpacerWidgetClass
+        - generic [ref=e362]:
+          - text: vip_level
+          - generic [ref=e363]: TextWidgetClass
+        - generic [ref=e364]:
+          - text: TextWidget1
+          - generic [ref=e365]: TextWidgetClass
+        - generic [ref=e366]:
+          - text: balance
+          - generic [ref=e367]: TextWidgetClass
+        - generic [ref=e368]:
+          - text: PanelWidget3
+          - generic [ref=e369]: PanelWidgetClass
+        - generic [ref=e370]:
+          - text: PanelWidget4
+          - generic [ref=e371]: PanelWidgetClass
+        - generic [ref=e372]:
+          - text: cats
+          - generic [ref=e373]: GridSpacerWidgetClass
+        - generic [ref=e374]:
+          - text: tovari
+          - generic [ref=e375]: ButtonWidgetClass
+        - generic [ref=e376]:
+          - text: tovari_bg
+          - generic [ref=e377]: PanelWidgetClass
+        - generic [ref=e378]:
+          - text: TextWidget2
+          - generic [ref=e379]: TextWidgetClass
+        - generic [ref=e380]:
+          - text: tovari_highlight
+          - generic [ref=e381]: PanelWidgetClass
+        - generic [ref=e382]:
+          - text: vehicles
+          - generic [ref=e383]: ButtonWidgetClass
+        - generic [ref=e384]:
+          - text: vehicles_bg
+          - generic [ref=e385]: PanelWidgetClass
+        - generic [ref=e386]:
+          - text: TextWidget3
+          - generic [ref=e387]: TextWidgetClass
+        - generic [ref=e388]:
+          - text: vehicles_highlight
+          - generic [ref=e389]: PanelWidgetClass
+        - generic [ref=e390]:
+          - text: licenses
+          - generic [ref=e391]: ButtonWidgetClass
+        - generic [ref=e392]:
+          - text: licenses_bg
+          - generic [ref=e393]: PanelWidgetClass
+        - generic [ref=e394]:
+          - text: TextWidget4
+          - generic [ref=e395]: TextWidgetClass
+        - generic [ref=e396]:
+          - text: licenses_highlight
+          - generic [ref=e397]: PanelWidgetClass
+        - generic [ref=e398]:
+          - text: GridSpacerWidget4
+          - generic [ref=e399]: GridSpacerWidgetClass
+        - generic [ref=e400]:
+          - text: shop
+          - generic [ref=e401]: ButtonWidgetClass
+        - generic [ref=e402]:
+          - text: shop_bg
+          - generic [ref=e403]: PanelWidgetClass
+        - generic [ref=e404]:
+          - text: TextWidget13
+          - generic [ref=e405]: TextWidgetClass
+        - generic [ref=e406]:
+          - text: shop_highlight
+          - generic [ref=e407]: PanelWidgetClass
+        - generic [ref=e408]:
+          - text: ImageWidget2
+          - generic [ref=e409]: ImageWidgetClass
+        - generic [ref=e410]:
+          - text: inventory
+          - generic [ref=e411]: ButtonWidgetClass
+        - generic [ref=e412]:
+          - text: inventory_highlight
+          - generic [ref=e413]: PanelWidgetClass
+        - generic [ref=e414]:
+          - text: ImageWidget1
+          - generic [ref=e415]: ImageWidgetClass
+        - generic [ref=e416]:
+          - text: inventory_bg
+          - generic [ref=e417]: PanelWidgetClass
+        - generic [ref=e418]:
+          - text: TextWidget5
+          - generic [ref=e419]: TextWidgetClass
+        - generic [ref=e420]:
+          - text: PanelWidget0
+          - generic [ref=e421]: GridSpacerWidgetClass
+        - generic [ref=e422]:
+          - text: body
+          - generic [ref=e423]: GridSpacerWidgetClass
+        - generic [ref=e424]:
+          - text: XComboBoxWidget0
+          - generic [ref=e425]: XComboBoxWidgetClass
+        - generic [ref=e426]:
+          - text: GridSpacerWidget5
+          - generic [ref=e427]: GridSpacerWidgetClass
+        - generic [ref=e428]:
+          - text: PanelWidget5
+          - generic [ref=e429]: PanelWidgetClass
+        - generic [ref=e430]:
+          - text: ImageWidget3
+          - generic [ref=e431]: ImageWidgetClass
+        - generic [ref=e432]:
+          - text: EditBoxWidget0
+          - generic [ref=e433]: EditBoxWidgetClass
+        - generic [ref=e434]:
+          - text: CheckBoxWidget0
+          - generic [ref=e435]: CheckBoxWidgetClass
+        - generic [ref=e436]:
+          - text: CheckBoxWidget1
+          - generic [ref=e437]: CheckBoxWidgetClass
+        - generic [ref=e438]:
+          - text: PanelWidget6
+          - generic [ref=e439]: PanelWidgetClass
+        - generic [ref=e440]:
+          - text: ScrollWidget0
+          - generic [ref=e441]: ScrollWidgetClass
+        - generic [ref=e442]:
+          - text: shop_place
+          - generic [ref=e443]: GridSpacerWidgetClass
+        - generic [ref=e444]:
+          - text: inventory_place
+          - generic [ref=e445]: WrapSpacerWidgetClass
+        - generic [ref=e446]:
+          - text: cart_place
+          - generic [ref=e447]: GridSpacerWidgetClass
+        - generic [ref=e448]:
+          - text: right_bar
+          - generic [ref=e449]: GridSpacerWidgetClass
+        - generic [ref=e450]:
+          - text: PanelWidget7
+          - generic [ref=e451]: PanelWidgetClass
+        - generic [ref=e452]:
+          - text: PanelWidget8
+          - generic [ref=e453]: PanelWidgetClass
+        - generic [ref=e454]:
+          - text: TextWidget6
+          - generic [ref=e455]: TextWidgetClass
+        - generic [ref=e456]:
+          - text: PanelWidget2
+          - generic [ref=e457]: PanelWidgetClass
+        - generic [ref=e458]:
+          - text: item
+          - generic [ref=e459]: ButtonWidgetClass
+        - generic [ref=e460]:
+          - text: item_bg
+          - generic [ref=e461]: ImageWidgetClass
+        - generic [ref=e462]:
+          - text: name
+          - generic [ref=e463]: RichTextWidgetClass
+        - generic [ref=e464]:
+          - text: item_pic
+          - generic [ref=e465]: ImageWidgetClass
+        - generic [ref=e466]:
+          - text: item_preview
+          - generic [ref=e467]: ItemPreviewWidgetClass
+        - generic [ref=e468]:
+          - text: player_preview
+          - generic [ref=e469]: PlayerPreviewWidgetClass
+        - generic [ref=e470]:
+          - text: highlighter
+          - generic [ref=e471]: ImageWidgetClass
+        - generic [ref=e472]:
+          - text: GridSpacerWidget8
+          - generic [ref=e473]: GridSpacerWidgetClass
+        - generic [ref=e474]:
+          - text: customize
+          - generic [ref=e475]: ButtonWidgetClass
+        - generic [ref=e476]:
+          - text: ImageWidget9
+          - generic [ref=e477]: ImageWidgetClass
+        - generic [ref=e478]:
+          - text: clean
+          - generic [ref=e479]: ButtonWidgetClass
+        - generic [ref=e480]:
+          - text: ImageWidget10
+          - generic [ref=e481]: ImageWidgetClass
+        - generic [ref=e482]:
+          - text: reload
+          - generic [ref=e483]: ButtonWidgetClass
+        - generic [ref=e484]:
+          - text: ImageWidget11
+          - generic [ref=e485]: ImageWidgetClass
+        - generic [ref=e486]:
+          - text: item_description
+          - generic [ref=e487]: RichTextWidgetClass
+        - generic [ref=e488]:
+          - text: GridSpacerWidget7
+          - generic [ref=e489]: GridSpacerWidgetClass
+        - generic [ref=e490]:
+          - text: TextWidget7
+          - generic [ref=e491]: TextWidgetClass
+        - generic [ref=e492]:
+          - text: TextWidget8
+          - generic [ref=e493]: TextWidgetClass
+        - generic [ref=e494]:
+          - text: TextWidget9
+          - generic [ref=e495]: TextWidgetClass
+        - generic [ref=e496]:
+          - text: quant_grid
+          - generic [ref=e497]: PanelWidgetClass
+        - generic [ref=e498]:
+          - text: quant_min
+          - generic [ref=e499]: ButtonWidgetClass
+        - generic [ref=e500]:
+          - text: quant
+          - generic [ref=e501]: EditBoxWidgetClass
+        - generic [ref=e502]:
+          - text: quant_plus
+          - generic [ref=e503]: ButtonWidgetClass
+        - generic [ref=e504]:
+          - text: PanelWidget10
+          - generic [ref=e505]: PanelWidgetClass
+        - generic [ref=e506]:
+          - text: TextWidget12
+          - generic [ref=e507]: TextWidgetClass
+        - generic [ref=e508]:
+          - text: AddToCartButton
+          - generic [ref=e509]: ButtonWidgetClass
+        - generic [ref=e510]:
+          - text: SellItem
+          - generic [ref=e511]: ButtonWidgetClass
+        - generic [ref=e512]:
+          - text: ButtonWidget3
+          - generic [ref=e513]: ButtonWidgetClass
+        - generic [ref=e514]:
+          - text: cart_panel
+          - generic [ref=e515]: PanelWidgetClass
+        - generic [ref=e516]:
+          - text: TextWidget10
+          - generic [ref=e517]: TextWidgetClass
+        - generic [ref=e518]:
+          - text: TextWidget11
+          - generic [ref=e519]: TextWidgetClass
+        - generic [ref=e520]:
+          - text: cart_buy
+          - generic [ref=e521]: ButtonWidgetClass
+        - generic [ref=e522]:
+          - text: GridSpacerWidget9
+          - generic [ref=e523]: GridSpacerWidgetClass
+        - generic [ref=e524]:
+          - text: PanelWidget11
+          - generic [ref=e525]: PanelWidgetClass
+        - generic [ref=e526]:
+          - text: item_description0
+          - generic [ref=e527]: RichTextWidgetClass
+        - generic [ref=e528]:
+          - text: ButtonWidget1
+          - generic [ref=e529]: ButtonWidgetClass
+        - generic [ref=e530]:
+          - text: PanelWidget12
+          - generic [ref=e531]: PanelWidgetClass
+        - generic [ref=e532]:
+          - text: GridSpacerWidget6
+          - generic [ref=e533]: GridSpacerWidgetClass
+        - generic [ref=e534]:
+          - text: CheckBoxWidget2
+          - generic [ref=e535]: CheckBoxWidgetClass
+        - generic [ref=e536]:
+          - text: item_description1
+          - generic [ref=e537]: RichTextWidgetClass
+        - generic [ref=e538]:
+          - text: attention
+          - generic [ref=e539]: WrapSpacerWidgetClass
+        - generic [ref=e540]:
+          - text: ImageWidget8
+          - generic [ref=e541]: ImageWidgetClass
+        - generic [ref=e542]:
+          - text: PanelWidget9
+          - generic [ref=e543]: PanelWidgetClass
+        - generic [ref=e544]:
+          - text: attention_text
+          - generic [ref=e545]: TextWidgetClass
+        - generic [ref=e546]:
+          - text: ImageWidget4
+          - generic [ref=e547]: ImageWidgetClass
+  - main [ref=e40]:
+    - generic [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e44]: G
+          - strong [ref=e45]: trader_menu.layout
+          - button "Close layout" [ref=e46] [cursor=pointer]: x
+        - generic [ref=e47]: 104 widgets
+      - generic "Preview toolbar" [ref=e48]:
+        - button "Toggle grid" [ref=e49] [cursor=pointer]
+        - button "Toggle snap" [ref=e50] [cursor=pointer]
+        - button "Not implemented" [disabled] [ref=e51]
+        - button "Preview normal state" [ref=e52] [cursor=pointer]
+        - button "Preview disabled state" [ref=e53] [cursor=pointer]
+        - button "Selection color" [ref=e54] [cursor=pointer]
+        - button "Scaled" [ref=e55] [cursor=pointer]
+        - button "Grid Size" [ref=e56] [cursor=pointer]
+        - button "Snap Margin" [ref=e57] [cursor=pointer]
+        - 'button "Zoom: 100%" [ref=e58] [cursor=pointer]'
+        - combobox "Preview resolution" [ref=e59]:
+          - option "FitToWindow"
+          - option "800x600"
+          - option "1280x720" [selected]
+          - option "1280x800"
+          - option "1280x1024"
+          - option "1360x768"
+          - option "1366x768"
+          - option "1440x900"
+          - option "1600x900"
+          - option "1680x1050"
+          - option "1920x1080"
+          - option "2560x1440"
+          - option "3840x2160"
+        - combobox "Preview state" [ref=e60]:
+          - option "normal" [selected]
+          - option "hover"
+          - option "selected"
+          - option "disabled"
+        - spinbutton "Grid size": "8"
+        - checkbox "Show grid" [checked]
+        - checkbox "Snap to grid"
+        - generic [ref=e61]: 1280x720
+    - generic [ref=e64]:
+      - generic [ref=e65]:
+        - tablist "Layout diagnostics" [ref=e66]:
+          - tab "Source" [selected] [ref=e67] [cursor=pointer]
+          - tab "Console 27" [ref=e780] [cursor=pointer]:
+            - text: Console
+            - generic [ref=e69]: "27"
+          - tab "Diagnostics" [ref=e70] [cursor=pointer]
+          - tab "Model" [ref=e71] [cursor=pointer]
+        - generic [ref=e72]:
+          - button "Refresh" [active] [ref=e73] [cursor=pointer]
+          - button "Edit" [ref=e74] [cursor=pointer]
+          - button "Diff" [disabled] [ref=e75]
+          - button "Apply" [disabled] [ref=e76]
+          - button "Revert" [disabled] [ref=e77]
+          - button "Undo" [ref=e78] [cursor=pointer]
+          - button "Redo" [disabled] [ref=e79]
+      - tabpanel [ref=e81]:
+        - textbox [ref=e82]: "PanelWidgetClass rootFrame { color 0 0 0 0.8392 size 1 1 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 style rover_sim_colorable { GridSpacerWidgetClass GridSpacerWidget0 { ignorepointer 1 position 0 15 size 48 48 halign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 Margin 0 \"Size To Content H\" 1 \"Size To Content V\" 1 content_halign center Columns 1 Rows 2 { TextWidgetClass TextWidget0 { visible 0 ignorepointer 1 position 102.27599 -10.8484 size 48 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"SIDOROVI4\" font \"gui/fonts/sdf_metronbook24\" \"bold text\" 1 \"exact text\" 1 \"exact text size\" 44 \"size to text h\" 1 \"size to text v\" 0 } ImageWidgetClass ImageWidget0 { ignorepointer 1 position 0 44 size 488 57 halign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 image0 \"MG_Stalker_GUI/data/logo.edds\" mode blend \"src alpha\" 1 \"clamp mode\" wrap \"stretch mode\" stretch_w_h } } } PanelWidgetClass GridSpacerWidget3 { visible 1 ignorepointer 1 position 0 -0.75694 size 0.92 0.86 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 { GridSpacerWidgetClass main { ignorepointer 1 position 0 30 size 0.92 0.8 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 Padding 0 Margin 0 \"Size To Content H\" 1 \"Size To Content V\" 1 Columns 1 Rows 2 { GridSpacerWidgetClass GridSpacerWidget1 { ignorepointer 1 color 1 1 1 0.0471 size 1 73 halign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 Margin 12 Rows 1 { RichTextWidgetClass vip_notif { clipchildren 0 ignorepointer 1 position 326.20001 35 size 355.91998 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\" font \"gui/fonts/sdf_metronlight24\" \"bold text\" 1 \"exact text\" 1 \"exact text size\" 16 \"size to text h\" 0 \"size to text v\" 0 \"text valign\" center wrap 1 \"condense whitespace\" 1 \"strip newlines\" 1 } PanelWidgetClass PanelWidget1 { ignorepointer 1 position 916.20001 14 size 48 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 } PanelWidgetClass balance_panel { ignorepointer 1 color 0 0 0 0.4078 position 916.20001 14 size 48 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style PDA_Panel { GridSpacerWidgetClass GridSpacerWidget2 { ignorepointer 1 size 1 1 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 Padding 0 Margin 15 content_halign center content_valign center Rows 1 { TextWidgetClass vip_level { clipchildren 0 ignorepointer 1 position 299.582 16.2778 size 48 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"VIP: VETERAN\" font \"gui/fonts/metronlight22\" \"exact text\" 1 \"text valign\" center } TextWidgetClass TextWidget1 { clipchildren 0 ignorepointer 1 position 299.582 16.2778 size 48 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"#mtrader_header_balance\" font \"gui/fonts/metronlight22\" \"exact text\" 1 \"text valign\" center } TextWidgetClass balance { clipchildren 0 ignorepointer 1 position 299.57999 16.2778 size 48 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 font \"gui/fonts/metron22\" \"exact text\" 1 \"size to text h\" 1 \"size to text v\" 1 \"text halign\" right } } } } } } } PanelWidgetClass PanelWidget3 { visible 1 ignorepointer 1 position 2006 61.0481 size 1 70 hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 { PanelWidgetClass PanelWidget4 { ignorepointer 1 position 0 0 size 0.76203 50 valign bottom_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 { GridSpacerWidgetClass cats { position 0 0 size 170 50 valign bottom_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 Padding 20 Margin 0 \"Size To Content H\" 1 Rows 1 { ButtonWidgetClass tovari { color 0.6784 0.1412 0.1412 0.4745 position 126.99599 43.7461 size 170 50 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style EmptyHighlight font \"gui/fonts/metronlight22\" { PanelWidgetClass tovari_bg { ignorepointer 1 color 1 1 1 0.0471 size 1 1 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 style rover_sim_colorable } TextWidgetClass TextWidget2 { ignorepointer 1 size 1 1 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 text \"#mtrader_header_tovari\" font \"gui/fonts/metron22\" \"exact text\" 1 \"text halign\" center \"text valign\" center } PanelWidgetClass tovari_highlight { ignorepointer 1 color 1 1 1 0.4784 size 1 1 halign center_ref valign bottom_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style rover_sim_colorable } } } ButtonWidgetClass vehicles { visible 0 color 0.6784 0.1412 0.1412 0.4745 position 126.99599 43.7461 size 170 50 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style EmptyHighlight text \"Transport\" font \"gui/fonts/metronlight22\" { PanelWidgetClass vehicles_bg { ignorepointer 1 color 1 1 1 0.0471 size 1 1 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 style rover_sim_colorable } TextWidgetClass TextWidget3 { ignorepointer 1 size 1 1 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 text \"Transport\" font \"gui/fonts/metron22\" \"exact text\" 1 \"text halign\" center \"text valign\" center } PanelWidgetClass vehicles_highlight { ignorepointer 1 color 1 1 1 0.4784 size 1 1 halign center_ref valign bottom_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style rover_sim_colorable } } } ButtonWidgetClass licenses { visible 0 color 0.6784 0.1412 0.1412 0.4745 position 126.99599 43.7461 size 170 50 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style EmptyHighlight text \"Licenses\" font \"gui/fonts/metronlight22\" { PanelWidgetClass licenses_bg { ignorepointer 1 color 1 1 1 0.0471 size 1 1 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 style rover_sim_colorable } TextWidgetClass TextWidget4 { ignorepointer 1 size 1 1 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 text \"Licenses\" font \"gui/fonts/metron22\" \"exact text\" 1 \"text halign\" center \"text valign\" center } PanelWidgetClass licenses_highlight { ignorepointer 1 color 1 1 1 0.4784 size 1 1 halign center_ref valign bottom_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style rover_sim_colorable } } } } } GridSpacerWidgetClass GridSpacerWidget4 { ignorepointer 1 position 0 0 size 110 50 halign right_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 Padding 10 Margin 0 \"Size To Content H\" 1 Columns 2 Rows 1 { ButtonWidgetClass shop { color 0.6784 0.1412 0.1412 1 position 102.396 17.1879 size 173.68301 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style EmptyHighlight \"no focus\" 1 { PanelWidgetClass shop_bg { ignorepointer 1 color 1 1 1 0.0471 position 0 0 size 1 48 valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style rover_sim_colorable { TextWidgetClass TextWidget13 { ignorepointer 1 position 0 0 size 121.12099 48 halign right_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"#trader_main_cart\" font \"gui/fonts/metron22\" \"exact text\" 0 \"text valign\" center } } } PanelWidgetClass shop_highlight { ignorepointer 1 color 1 1 1 0.4784 size 1 1 halign center_ref valign bottom_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style rover_sim_colorable } ImageWidgetClass ImageWidget2 { ignorepointer 1 position 5 0 size 37 37 valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 image0 \"{F6FF96A8331BCF17}MG_Stalker_GUI/data/trader/shop.edds\" mode blend \"src alpha\" 1 \"clamp mode\" wrap \"stretch mode\" stretch_w_h } } } ButtonWidgetClass inventory { visible 1 color 0.6784 0.1412 0.1412 1 position -38.3334 17.1879 size 170.52701 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style EmptyHighlight \"no focus\" 1 { PanelWidgetClass inventory_highlight { ignorepointer 1 color 1 1 1 0.4784 size 1 1 halign center_ref valign bottom_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style rover_sim_colorable } ImageWidgetClass ImageWidget1 { ignorepointer 1 position 5 0 size 37 37 valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 image0 \"MG_Stalker_GUI/data/trader/inventory.edds\" mode blend \"src alpha\" 1 \"clamp mode\" wrap \"stretch mode\" stretch_w_h } PanelWidgetClass inventory_bg { ignorepointer 1 color 1 1 1 0.0471 size 1 48 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style rover_sim_colorable { TextWidgetClass TextWidget5 { ignorepointer 1 position 0 0 size 121.12099 48 halign right_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"#trader_main_inventory\" font \"gui/fonts/metron22\" \"exact text\" 0 \"text valign\" center } } } } } } } } } } } GridSpacerWidgetClass PanelWidget0 { clipchildren 0 ignorepointer 1 position -112 -38 size 1 0.841 hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 Padding 23 Margin 0 \"Size To Content H\" 1 \"Size To Content V\" 1 Columns 2 Rows 1 { GridSpacerWidgetClass body { ignorepointer 1 color 1 1 1 0.0471 position 899.20001 182.409 size 0.8 0.077 hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 style Colorable Padding 5 Margin 10 \"Size To Content V\" 1 Columns 1 { XComboBoxWidgetClass XComboBoxWidget0 { visible 0 size 0.98 40 halign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style debugUI font \"gui/fonts/metron22\" items \"All;Clothes;Items;Guns\" } GridSpacerWidgetClass GridSpacerWidget5 { ignorepointer 1 position 0 40 size 0.98 20 halign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 Padding 10 Margin 0 \"Size To Content V\" 1 content_halign center content_valign center Rows 1 { PanelWidgetClass PanelWidget5 { ignorepointer 1 color 1 1 1 0.4784 position 784.25 25.348 size 48 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style PDA_Panel { ImageWidgetClass ImageWidget3 { ignorepointer 1 position 7 0 size 25 25 valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 image0 \"MG_Stalker_GUI/data/trader/search.edds\" mode blend \"src alpha\" 1 \"clamp mode\" wrap \"stretch mode\" stretch_w_h } EditBoxWidgetClass EditBoxWidget0 { color 0.8863 0.8863 0.8863 1 position 35 0 size 367 20 valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style ServerBrowser text \"#mtrader_header_searchbox\" \"Default text color\" 0.8863 0.8863 0.8863 1 \"Use default text\" 1 \"exact text\" 0 font \"gui/fonts/metron22\" \"text color\" 0.8863 0.8863 0.8863 1 } } } CheckBoxWidgetClass CheckBoxWidget0 { color 1 1 1 0.9843 position 654.43005 45.348 size 48 34 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style Default \"no focus\" 1 text \" #mtrader_header_vipprod\" font \"gui/fonts/metron22\" } CheckBoxWidgetClass CheckBoxWidget1 { color 1 1 1 0.9843 position 654.43005 45.348 size 48 34 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style Default \"no focus\" 1 text \" #mtrader_header_showall\" font \"gui/fonts/metron22\" } } } PanelWidgetClass PanelWidget6 { ignorepointer 1 position 1242.25 106.856 size 48 13 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 } ScrollWidgetClass ScrollWidget0 { ignorepointer 0 position 0 100 size 0.98 592.71204 halign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style blank \"Scrollbar V\" 1 { GridSpacerWidgetClass shop_place { clipchildren 0 ignorepointer 1 position 0 0 size 0.98 1111 hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 Padding 10 Margin 0 \"Size To Content V\" 1 content_halign center Columns 1 } WrapSpacerWidgetClass inventory_place { ignorepointer 1 position 0 0 size 1 588.52002 hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 Padding 15 Margin 0 \"Size To Content V\" 1 content_halign center } GridSpacerWidgetClass cart_place { clipchildren 0 ignorepointer 1 position 0 0 size 0.98 1111 hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 Padding 10 Margin 0 \"Size To Content V\" 1 content_halign center Columns 1 } } } } } GridSpacerWidgetClass right_bar { visible 1 clipchildren 0 ignorepointer 1 position 814.60797 182.409 size 0.20962 0.077 hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 Padding 10 Margin 0 \"Size To Content V\" 1 Columns 1 Rows 2 { PanelWidgetClass PanelWidget7 { visible 1 clipchildren 0 ignorepointer 1 position 65.2688 12.9462 size 48 0 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 { PanelWidgetClass PanelWidget8 { ignorepointer 1 position 0.00001 -28.5955 size 1 28.5955 halign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style blank { TextWidgetClass TextWidget6 { ignorepointer 1 size 48 48 halign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"#trader_main_item_info\" font \"gui/fonts/sdf_metronlight24\" \"exact text\" 1 \"exact text size\" 16 \"size to text h\" 1 \"size to text v\" 1 \"text halign\" center \"text valign\" center } } } } } PanelWidgetClass PanelWidget2 { visible 1 ignorepointer 1 color 1 1 1 0.0471 position -1 15 size 0.99 461.69601 halign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style rover_sim_colorable { ButtonWidgetClass item { visible 1 position 0 0 size 1 355.952 hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 style Empty { ImageWidgetClass item_bg { visible 1 ignorepointer 1 position 0 0 size 1 1.00288 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 0 image0 \"{16257C838FF30B1F}MG_Stalker_GUI/data/trader/item_bg.edds\" mode blend \"src alpha\" 1 \"clamp mode\" clamp \"stretch mode\" stretch_w_h \"flip u\" 0 nocache 0 { RichTextWidgetClass name { visible 1 ignorepointer 1 position 3 3 size 223.925 38.0034 valign bottom_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 font \"gui/fonts/sdf_metronbook24\" \"bold text\" 0 \"exact text\" 1 \"exact text size\" 10 \"text valign\" center wrap 1 \"condense whitespace\" 1 \"strip newlines\" 1 } ImageWidgetClass item_pic { visible 0 ignorepointer 1 size 1 310 halign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 } ItemPreviewWidgetClass item_preview { visible 1 ignorepointer 1 size 1 310 halign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 } PlayerPreviewWidgetClass player_preview { visible 1 ignorepointer 0 position -0.00002 0 size 1 310 halign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 } ImageWidgetClass highlighter { visible 1 ignorepointer 1 position 0 0 size 1 312 halign center_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 image0 \"{86B8998D50D1AAEA}MG_Capture/gui/data/highlighter.edds\" mode blend \"src alpha\" 1 \"clamp mode\" clamp \"stretch mode\" stretch_w_h } GridSpacerWidgetClass GridSpacerWidget8 { visible 1 ignorepointer 1 position 10 10 size 101 48 halign right_ref valign bottom_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 Padding 5 Margin 0 \"Size To Content H\" 1 \"Size To Content V\" 1 Rows 1 { ButtonWidgetClass customize { visible 1 ignorepointer 0 position 54.7499 20.3914 size 25 25 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 { ImageWidgetClass ImageWidget9 { ignorepointer 1 size 25 25 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 image0 \"MG_Stalker_GUI/data/trader/icon_customize.edds\" mode blend \"src alpha\" 1 \"clamp mode\" wrap \"stretch mode\" stretch_w_h } } } ButtonWidgetClass clean { visible 1 ignorepointer 0 position 54.7499 20.3914 size 25 25 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 { ImageWidgetClass ImageWidget10 { ignorepointer 1 size 25 25 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 image0 \"MG_Stalker_GUI/data/trader/icon_clean.edds\" mode blend \"src alpha\" 1 \"clamp mode\" wrap \"stretch mode\" stretch_w_h } } } ButtonWidgetClass reload { visible 1 ignorepointer 0 position 54.7499 20.3914 size 25 25 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 { ImageWidgetClass ImageWidget11 { ignorepointer 1 size 25 25 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 image0 \"MG_Stalker_GUI/data/trader/icon_reload.edds\" mode blend \"src alpha\" 1 \"clamp mode\" wrap \"stretch mode\" stretch_w_h } } } } } } } } } RichTextWidgetClass item_description { clipchildren 0 ignorepointer 1 position 0 3 size 0.9 100 halign center_ref valign bottom_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 text \"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\" font \"gui/fonts/metronlight\" \"exact text\" 1 \"size to text h\" 0 \"size to text v\" 0 \"text halign\" center \"text valign\" center wrap 1 \"condense whitespace\" 1 \"strip newlines\" 1 } } } GridSpacerWidgetClass GridSpacerWidget7 { ignorepointer 1 position 0 0 size 1 32.2836 halign center_ref valign bottom_ref hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 Padding 5 Margin 0 \"Size To Content V\" 1 content_halign center content_valign center Columns 1 Rows 2 { TextWidgetClass TextWidget7 { visible 1 clipchildren 0 ignorepointer 1 color 0.9059 0.9059 0.9059 1 size 48 48 halign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"#mtrader_rp_slots\" font \"gui/fonts/sdf_metronlight24\" \"exact text\" 1 \"exact text size\" 12 \"size to text h\" 1 \"size to text v\" 1 \"text valign\" center } TextWidgetClass TextWidget8 { visible 1 ignorepointer 1 size 48 48 halign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"Razmer 20\" font \"gui/fonts/sdf_metronlight24\" \"exact text\" 1 \"exact text size\" 12 \"size to text h\" 1 \"size to text v\" 1 \"text valign\" center } TextWidgetClass TextWidget9 { clipchildren 0 ignorepointer 1 color 0.9059 0.9059 0.9059 1 position 0 0 size 48 48 halign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"#mtrader_rp_count\" font \"gui/fonts/sdf_metronlight24\" \"exact text\" 1 \"exact text size\" 12 \"size to text h\" 1 \"size to text v\" 1 \"text valign\" center } PanelWidgetClass quant_grid { visible 1 ignorepointer 0 position 0 2.48 size 48 25 halign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style blank { ButtonWidgetClass quant_min { color 0.6784 0.1412 0.1412 1 size 25 25 valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style Colorable text \"-\" } EditBoxWidgetClass quant { ignorepointer 0 size 272.91998 25 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style ServerBrowser text \"1\" \"exact text\" 0 font \"gui/fonts/metron\" \"text halign\" center } ButtonWidgetClass quant_plus { color 0.1412 0.6392 0.1412 1 size 25 25 halign right_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style Colorable text \"+\" } } } } } PanelWidgetClass PanelWidget10 { visible 1 ignorepointer 1 position 321.57999 2.16003 size 48 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 { TextWidgetClass TextWidget12 { ignorepointer 1 position 0 0 size 188 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"11.445.000\" font \"gui/fonts/metron22\" \"text halign\" center \"text valign\" center } ButtonWidgetClass AddToCartButton { color 0.6784 0.1412 0.1412 1 position 0 0 size 142 48 halign right_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style MGS_button2 text \"#mtrader_rp_addtocart\" font \"gui/fonts/metron22\" } ButtonWidgetClass SellItem { visible 0 color 0.6784 0.1412 0.1412 1 position 0 0 size 142 48 halign right_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style MGS_button2 text \"#trader_main_sellitem\" font \"gui/fonts/metron22\" } ButtonWidgetClass ButtonWidget3 { visible 0 color 0.6784 0.1412 0.1412 1 position 0 0 size 142 48 halign right_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style MGS_button2 text \"#mtrader_rp_addtocart\" font \"gui/fonts/metron22\" } } } PanelWidgetClass cart_panel { visible 0 ignorepointer 1 color 1 1 1 0.0471 position 321.57999 2.16003 size 48 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style rover_sim_colorable { TextWidgetClass TextWidget10 { ignorepointer 1 position 15.6167 22.8674 size 169.87401 20.9495 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"11111111\" font \"gui/fonts/metron22\" \"exact text\" 0 } TextWidgetClass TextWidget11 { clipchildren 0 ignorepointer 1 position 16.4534 4.46194 size 169.037 17.882 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"#trader_main_summary\" font \"gui/fonts/metronlight12\" \"text valign\" center } ButtonWidgetClass cart_buy { color 0.6784 0.1412 0.1412 1 position 10 0 size 109.372 29.5945 halign right_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style MGS_button2 text \"#trader_main_buy\" font \"gui/fonts/metron22\" } } } GridSpacerWidgetClass GridSpacerWidget9 { visible 0 ignorepointer 1 position 650.15894 1184.22998 size 48 48 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 Padding 10 Margin 0 \"Size To Content V\" 1 Columns 1 Rows 2 { PanelWidgetClass PanelWidget11 { ignorepointer 1 color 1 1 1 0.0471 position 117.6 143.71899 size 48 67.072 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style rover_sim_colorable { RichTextWidgetClass item_description0 { clipchildren 0 ignorepointer 1 position 10 0 size 202 58.28001 valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"#mtrader_costchanged\" font \"gui/fonts/metronlight16\" \"exact text\" 1 \"size to text h\" 0 \"size to text v\" 0 \"text halign\" center wrap 1 \"condense whitespace\" 1 \"strip newlines\" 1 } ButtonWidgetClass ButtonWidget1 { color 0.6784 0.1412 0.1412 1 position 10 0 size 110.572 48 halign right_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style MGS_button2 text \"Confirm\" font \"gui/fonts/metron16\" } } } PanelWidgetClass PanelWidget12 { ignorepointer 1 color 1 1 1 0.0471 position 117.6 143.71899 size 48 67.072 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style rover_sim_colorable { GridSpacerWidgetClass GridSpacerWidget6 { ignorepointer 1 size 50.5 48 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 Padding 3 Margin 0 \"Size To Content H\" 1 \"Size To Content V\" 1 content_valign center Columns 2 Rows 1 { CheckBoxWidgetClass CheckBoxWidget2 { color 1 1 1 0.9843 position 25 0 size 15 15 valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 style Default \"no focus\" 1 font \"gui/fonts/metron22\" } RichTextWidgetClass item_description1 { clipchildren 0 ignorepointer 1 position -498.41202 0.59601 size 267.5 58.28 valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"#mtrader_acceptance\" font \"gui/fonts/metronlight16\" \"exact text\" 1 \"size to text h\" 0 \"size to text v\" 0 wrap 1 \"condense whitespace\" 1 \"strip newlines\" 1 } } } } } } } WrapSpacerWidgetClass attention { visible 0 ignorepointer 1 position 195 9.16003 size 1 35 hexactpos 1 vexactpos 1 hexactsize 0 vexactsize 1 Padding 0 Margin 0 \"Size To Content V\" 1 content_halign center content_valign center { ImageWidgetClass ImageWidget8 { ignorepointer 1 position 152.58 19.16 size 22 21 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 image0 \"MG_Stalker_GUI/data/trader/attention.edds\" mode blend \"src alpha\" 1 \"clamp mode\" wrap \"stretch mode\" stretch_w_h } PanelWidgetClass PanelWidget9 { ignorepointer 1 position 273.57999 5.16003 size 10 10 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 } TextWidgetClass attention_text { ignorepointer 1 position 121.58 5.16003 size 48 21 hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 text \"Tovar zakonchilsya\" font \"gui/fonts/metronlight14\" \"exact text\" 1 \"size to text h\" 1 \"size to text v\" 0 \"text halign\" center \"text valign\" center } } } } } } } } } } } ImageWidgetClass ImageWidget4 { visible 0 ignorepointer 1 size 200 200 halign center_ref valign center_ref hexactpos 1 vexactpos 1 hexactsize 1 vexactsize 1 image0 \"MG_Stalker_GUI/data/trader/loading_main.edds\" mode blend \"src alpha\" 1 \"clamp mode\" wrap \"stretch mode\" stretch_w_h } } }"
+  - complementary [ref=e83]:
+    - generic [ref=e84]:
+      - generic [ref=e85]: Inspector
+      - generic [ref=e86]:
+        - generic [ref=e549]:
+          - term [ref=e550]: Name
+          - definition [ref=e551]: rootFrame
+          - term [ref=e552]: Type
+          - definition [ref=e553]: PanelWidgetClass
+          - term [ref=e554]: Line
+          - definition [ref=e555]: "1"
+          - term [ref=e556]: Box
+          - definition [ref=e557]: 0.0, 0.0, 1280.0, 720.0
+          - term [ref=e558]: Text
+          - definition [ref=e559]
+          - term [ref=e560]: Font
+          - definition [ref=e561]
+          - term [ref=e562]: Style
+          - definition [ref=e563]: rover_sim_colorable
+          - term [ref=e564]: Priority
+          - definition [ref=e565]: "0"
+        - generic [ref=e566]:
+          - tree "Widget classes" [ref=e567]:
+            - group [ref=e568]:
+              - generic "v Basic" [ref=e569] [cursor=pointer]
+              - generic [ref=e570]:
+                - button "ButtonWidget" [ref=e571] [cursor=pointer]
+                - button "CheckBoxWidget" [ref=e572] [cursor=pointer]
+                - button "ContentWidget" [ref=e573] [cursor=pointer]
+                - button "EditBoxWidget" [ref=e574] [cursor=pointer]
+                - button "EmbededWidget" [ref=e575] [cursor=pointer]
+                - button "FrameWidget" [ref=e576] [cursor=pointer]
+                - button "ImageWidget" [ref=e577] [cursor=pointer]
+                - button "MultilineEditBoxWidget" [ref=e578] [cursor=pointer]
+                - button "MultilineTextWidget" [ref=e579] [cursor=pointer]
+                - button "PanelWidget" [ref=e580] [cursor=pointer]
+                - button "PasswordEditBoxWidget" [ref=e581] [cursor=pointer]
+                - button "ProgressBarWidget" [ref=e582] [cursor=pointer]
+                - button "RichTextWidget" [ref=e583] [cursor=pointer]
+                - button "SimpleProgressBarWidget" [ref=e584] [cursor=pointer]
+                - button "SliderWidget" [ref=e585] [cursor=pointer]
+                - button "TextListboxWidget" [ref=e586] [cursor=pointer]
+                - button "TextWidget" [ref=e587] [cursor=pointer]
+                - button "WindowWidget" [ref=e588] [cursor=pointer]
+                - button "XComboBoxWidget" [ref=e589] [cursor=pointer]
+            - group [ref=e590]:
+              - generic "v Game" [ref=e591] [cursor=pointer]
+              - generic [ref=e592]:
+                - button "HtmlWidget" [ref=e593] [cursor=pointer]
+                - button "ItemPreviewWidget" [ref=e594] [cursor=pointer]
+                - button "MapWidget" [ref=e595] [cursor=pointer]
+                - button "PlayerPreviewWidget" [ref=e596] [cursor=pointer]
+                - button "ServerBrowserWidget" [ref=e597] [cursor=pointer]
+                - button "SmartPanelWidget" [ref=e598] [cursor=pointer]
+                - button "ThreeStateCheckboxWidget" [ref=e599] [cursor=pointer]
+            - group [ref=e600]:
+              - generic "v Helpers" [ref=e601] [cursor=pointer]
+              - generic [ref=e602]:
+                - button "GridSpacerWidget" [ref=e603] [cursor=pointer]
+                - button "ScrollWidget" [ref=e604] [cursor=pointer]
+                - button "WrapSpacerWidget" [ref=e605] [cursor=pointer]
+            - group [ref=e606]:
+              - generic "v Special" [ref=e607] [cursor=pointer]
+              - generic [ref=e608]:
+                - button "CanvasWidget" [ref=e609] [cursor=pointer]
+                - button "GenericListboxWidget" [ref=e610] [cursor=pointer]
+                - button "RenderTargetWidget" [ref=e611] [cursor=pointer]
+                - button "RTTextureWidget" [ref=e612] [cursor=pointer]
+                - button "UniversalListboxWidget" [ref=e613] [cursor=pointer]
+                - button "VideoWidget" [ref=e614] [cursor=pointer]
+          - generic [ref=e615]:
+            - textbox [ref=e616]: FrameWidget
+            - button "Add Child" [ref=e617] [cursor=pointer]
+          - generic [ref=e618]:
+            - combobox [ref=e619]
+            - button "Reparent" [disabled] [ref=e620]
+            - button "Delete" [ref=e621] [cursor=pointer]
+      - generic [ref=e87]: Typed Properties
+      - generic [ref=e88]:
+        - generic [ref=e622]:
+          - generic [ref=e623]: Geometry
+          - generic [ref=e624]:
+            - strong [ref=e625]: rootFrame
+            - code [ref=e626]: PanelWidgetClass
+          - generic [ref=e627]:
+            - generic [ref=e628]:
+              - generic [ref=e629]: X
+              - spinbutton "X px" [ref=e630]: "0"
+              - combobox [ref=e631]:
+                - option "%"
+                - option "px" [selected]
+            - generic [ref=e632]:
+              - generic [ref=e633]: "Y"
+              - spinbutton "Y px" [ref=e634]: "0"
+              - combobox [ref=e635]:
+                - option "%"
+                - option "px" [selected]
+            - generic [ref=e636]:
+              - generic [ref=e637]: W
+              - spinbutton "W %" [ref=e638]: "100"
+              - combobox [ref=e639]:
+                - option "%" [selected]
+                - option "px"
+            - generic [ref=e640]:
+              - generic [ref=e641]: H
+              - spinbutton "H %" [ref=e642]: "100"
+              - combobox [ref=e643]:
+                - option "%" [selected]
+                - option "px"
+          - generic [ref=e644]:
+            - generic [ref=e645]:
+              - generic [ref=e646]: H anchor
+              - combobox "H anchor" [ref=e647]:
+                - option "left"
+                - option "center" [selected]
+                - option "right"
+            - generic [ref=e648]:
+              - generic [ref=e649]: V anchor
+              - combobox "V anchor" [ref=e650]:
+                - option "top"
+                - option "center" [selected]
+                - option "bottom"
+          - generic "Anchor presets" [ref=e651]:
+            - button "left top" [ref=e652] [cursor=pointer]
+            - button "center top" [ref=e653] [cursor=pointer]
+            - button "right top" [ref=e654] [cursor=pointer]
+            - button "left center" [ref=e655] [cursor=pointer]
+            - button "center center" [ref=e656] [cursor=pointer]
+            - button "right center" [ref=e657] [cursor=pointer]
+            - button "left bottom" [ref=e658] [cursor=pointer]
+            - button "center bottom" [ref=e659] [cursor=pointer]
+            - button "right bottom" [ref=e660] [cursor=pointer]
+          - button "Save Geometry" [ref=e661] [cursor=pointer]
+        - generic [ref=e662]: Layout
+        - generic [ref=e663]:
+          - generic [ref=e664]:
+            - generic [ref=e665]: Position
+            - code [ref=e666]: position
+          - generic [ref=e667]:
+            - generic [ref=e668]:
+              - generic [ref=e669]: x
+              - spinbutton "x" [ref=e670]: "0"
+            - generic [ref=e671]:
+              - generic [ref=e672]: "y"
+              - spinbutton "y" [ref=e673]: "0"
+          - button "Save" [ref=e674] [cursor=pointer]
+        - generic [ref=e675]:
+          - generic [ref=e676]:
+            - generic [ref=e677]: Size
+            - code [ref=e678]: size
+          - generic [ref=e679]:
+            - generic [ref=e680]:
+              - generic [ref=e681]: w
+              - spinbutton "w" [ref=e682]: "1"
+            - generic [ref=e683]:
+              - generic [ref=e684]: h
+              - spinbutton "h" [ref=e685]: "1"
+          - button "Save" [ref=e686] [cursor=pointer]
+        - generic [ref=e687]:
+          - generic [ref=e688]:
+            - generic [ref=e689]: Exact X
+            - code [ref=e690]: hexactpos
+          - generic [ref=e691]:
+            - checkbox "Exact X" [checked] [ref=e692]
+            - generic [ref=e693]: Exact X
+          - button "Save" [ref=e694] [cursor=pointer]
+        - generic [ref=e695]:
+          - generic [ref=e696]:
+            - generic [ref=e697]: Exact Y
+            - code [ref=e698]: vexactpos
+          - generic [ref=e699]:
+            - checkbox "Exact Y" [checked] [ref=e700]
+            - generic [ref=e701]: Exact Y
+          - button "Save" [ref=e702] [cursor=pointer]
+        - generic [ref=e703]:
+          - generic [ref=e704]:
+            - generic [ref=e705]: Exact W
+            - code [ref=e706]: hexactsize
+          - generic [ref=e707]:
+            - checkbox "Exact W" [ref=e708]
+            - generic [ref=e709]: Exact W
+          - button "Save" [ref=e710] [cursor=pointer]
+        - generic [ref=e711]:
+          - generic [ref=e712]:
+            - generic [ref=e713]: Exact H
+            - code [ref=e714]: vexactsize
+          - generic [ref=e715]:
+            - checkbox "Exact H" [ref=e716]
+            - generic [ref=e717]: Exact H
+          - button "Save" [ref=e718] [cursor=pointer]
+        - generic [ref=e719]:
+          - generic [ref=e720]:
+            - generic [ref=e721]: H Align
+            - code [ref=e722]: halign
+          - combobox [ref=e723]:
+            - option "left" [selected]
+            - option "center"
+            - option "right"
+          - button "Save" [ref=e724] [cursor=pointer]
+        - generic [ref=e725]:
+          - generic [ref=e726]:
+            - generic [ref=e727]: V Align
+            - code [ref=e728]: valign
+          - combobox [ref=e729]:
+            - option "top" [selected]
+            - option "center"
+            - option "bottom"
+          - button "Save" [ref=e730] [cursor=pointer]
+        - generic [ref=e731]: State
+        - generic [ref=e732]:
+          - generic [ref=e733]:
+            - generic [ref=e734]: Visible
+            - code [ref=e735]: visible
+          - generic [ref=e736]:
+            - checkbox "Visible" [checked] [ref=e737]
+            - generic [ref=e738]: Visible
+          - button "Save" [ref=e739] [cursor=pointer]
+        - generic [ref=e740]:
+          - generic [ref=e741]:
+            - generic [ref=e742]: Ignore Pointer
+            - code [ref=e743]: ignorepointer
+          - generic [ref=e744]:
+            - checkbox "Ignore Pointer" [ref=e745]
+            - generic [ref=e746]: Ignore Pointer
+          - button "Save" [ref=e747] [cursor=pointer]
+        - generic [ref=e748]:
+          - generic [ref=e749]:
+            - generic [ref=e750]: Priority
+            - code [ref=e751]: priority
+          - spinbutton [ref=e752]: "0"
+          - button "Save" [ref=e753] [cursor=pointer]
+        - generic [ref=e754]: Style
+        - generic [ref=e755]:
+          - generic [ref=e756]:
+            - generic [ref=e757]: Style
+            - code [ref=e758]: style
+          - textbox [ref=e759]: rover_sim_colorable
+          - button "Save" [ref=e760] [cursor=pointer]
+        - generic [ref=e761]:
+          - generic [ref=e762]:
+            - generic [ref=e763]: Font
+            - code [ref=e764]: font
+          - textbox [ref=e765]
+          - button "Save" [ref=e766] [cursor=pointer]
+        - generic [ref=e767]:
+          - generic [ref=e768]:
+            - generic [ref=e769]: Color
+            - code [ref=e770]: color
+          - generic [ref=e771]:
+            - textbox [ref=e772]: "#000000"
+            - generic [ref=e773]:
+              - generic [ref=e774]: a
+              - spinbutton "a" [ref=e775]: "0.8392"
+          - button "Save" [ref=e776] [cursor=pointer]
+      - generic [ref=e89]: Raw Property
+      - generic [ref=e90]:
+        - generic [ref=e91]:
+          - generic [ref=e92]: Key
+          - textbox "Key" [ref=e93]:
+            - /placeholder: text, position, size, image0
+            - text: size
+        - generic [ref=e94]:
+          - generic [ref=e95]: Values
+          - textbox "Values" [ref=e96]:
+            - /placeholder: Space-separated values
+            - text: 1 1
+        - button "Save Property" [ref=e97] [cursor=pointer]
+      - generic [ref=e98]: Images
+      - paragraph [ref=e777]: No image slots.
+    - generic [ref=e100]:
+      - generic [ref=e101]: Diagnostics
+      - generic [ref=e778]:
+        - strong [ref=e779]: layout.widget.non-positive-size
+        - text: Widget "PanelWidget7" has a non-positive size (48 0).
+        - text: line 780

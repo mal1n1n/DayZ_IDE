@@ -31,7 +31,7 @@ test("MCP stdio exposes prompt templates and renders prompt arguments", async ()
       id: 2,
       method: "prompts/get",
       params: {
-        name: "dayz_ui_engine_fidelity",
+        name: "dayz_ui_layout_review",
         arguments: {
           projectRoot: "fixtures",
           layoutFile: "fixtures/layouts/pda_minimal.layout",
@@ -42,8 +42,9 @@ test("MCP stdio exposes prompt templates and renders prompt arguments", async ()
     const listed = responses.find((message) => message.id === 1);
     const rendered = responses.find((message) => message.id === 2);
 
-    assert.equal(listed.result.prompts.some((prompt) => prompt.name === "dayz_ui_engine_fidelity"), true);
-    assert.match(rendered.result.messages[0].content.text, /engine_capture_workflow/);
+    assert.equal(listed.result.prompts.some((prompt) => prompt.name === "dayz_ui_layout_review"), true);
+    assert.equal(listed.result.prompts.some((prompt) => prompt.name.includes("engine")), false);
+    assert.match(rendered.result.messages[0].content.text, /layout_validate/);
     assert.match(rendered.result.messages[0].content.text, /fixtures\/layouts\/pda_minimal\.layout/);
   } finally {
     child.kill();

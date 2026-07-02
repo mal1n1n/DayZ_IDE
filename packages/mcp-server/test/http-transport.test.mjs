@@ -48,7 +48,7 @@ test("MCP HTTP transport serves JSON-RPC on loopback and rejects foreign origins
       params: {},
     });
     assert.equal(listed.status, 200);
-    assert.equal(listed.body.result.tools.some((tool) => tool.name === "toolchain_readiness"), true);
+    assert.equal(listed.body.result.tools.some((tool) => tool.name === "preview_model"), true);
     assert.equal(listed.body.result.tools.some((tool) => tool.name === "plugin_sdk_report"), true);
     assert.equal(listed.body.result.tools.some((tool) => tool.name === "plugin_runtime_registry"), true);
     assert.equal(listed.body.result.tools.some((tool) => tool.name === "plugin_runtime_package"), true);
@@ -56,6 +56,7 @@ test("MCP HTTP transport serves JSON-RPC on loopback and rejects foreign origins
     assert.equal(listed.body.result.tools.some((tool) => tool.name === "plugin_runtime_command"), true);
     assert.equal(listed.body.result.tools.some((tool) => tool.name === "plugin_runtime_trust"), true);
     assert.equal(listed.body.result.tools.some((tool) => tool.name === "font_coverage_report"), true);
+    assert.equal(listed.body.result.tools.some((tool) => tool.name === "layout_compose"), true);
 
     const preview = await postJsonRpc(port, {
       jsonrpc: "2.0",
@@ -74,6 +75,38 @@ test("MCP HTTP transport serves JSON-RPC on loopback and rejects foreign origins
     assert.equal(preview.body.result.structuredContent.previewState, "hover");
     assert.equal(preview.body.result.structuredContent.nodes[0].state.requested, "hover");
 
+    const composed = await postJsonRpc(port, {
+      jsonrpc: "2.0",
+      id: "compose-layout",
+      method: "tools/call",
+      params: {
+        name: "layout_compose",
+        arguments: {
+          file: "fixtures/layouts/generated_ai.layout",
+          project: "fixtures",
+          includeSource: true,
+          spec: {
+            root: {
+              typeClass: "FrameWidgetClass",
+              name: "GeneratedRoot",
+              props: { position: [0, 0], size: [1, 1] },
+              children: [
+                {
+                  typeClass: "TextWidgetClass",
+                  name: "Title",
+                  props: { position: [0.1, 0.1], size: [0.3, 0.05], text: "Generated title" },
+                },
+              ],
+            },
+          },
+        },
+      },
+    });
+    assert.equal(composed.status, 200);
+    assert.equal(composed.body.result.structuredContent.written, false);
+    assert.equal(composed.body.result.structuredContent.widgetCount, 2);
+    assert.match(composed.body.result.structuredContent.source, /TextWidgetClass Title/);
+
     const prompts = await postJsonRpc(port, {
       jsonrpc: "2.0",
       id: 3,
@@ -82,6 +115,8 @@ test("MCP HTTP transport serves JSON-RPC on loopback and rejects foreign origins
     });
     assert.equal(prompts.status, 200);
     assert.equal(prompts.body.result.prompts.some((prompt) => prompt.name === "dayz_ui_safe_edit"), true);
+    assert.equal(prompts.body.result.prompts.some((prompt) => prompt.name === "dayz_ui_layout_from_brief"), true);
+    assert.equal(prompts.body.result.prompts.some((prompt) => prompt.name === "dayz_ui_image_port"), true);
 
     const resized = await postJsonRpc(port, {
       jsonrpc: "2.0",

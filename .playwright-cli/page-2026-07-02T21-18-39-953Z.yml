@@ -1,0 +1,397 @@
+- generic [ref=f3e2]:
+  - navigation "Workspace" [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - strong [ref=f3e5]: DayZ IDE
+      - generic [ref=f3e6]: UI Editor
+    - button "Editor" [ref=f3e7] [cursor=pointer]
+    - button "Project" [ref=f3e8] [cursor=pointer]
+    - button "Assets" [ref=f3e9] [cursor=pointer]
+    - button "MCP" [ref=f3e10] [cursor=pointer]
+  - complementary [ref=f3e11]:
+    - generic [ref=f3e12]:
+      - generic [ref=f3e13]: Open Layout
+      - generic [ref=f3e14]:
+        - generic [ref=f3e15]:
+          - generic [ref=f3e16]: Layout file
+          - textbox "Layout file" [ref=f3e17]: C:/Users/user/source/repos/mal1n1n/MGStalker/src/ClientMods/MG_Stalker_GUI/gui/layouts/trader/trader_menu.layout
+        - generic [ref=f3e18]:
+          - generic [ref=f3e19]: Project root
+          - textbox "Project root" [ref=f3e20]:
+            - /placeholder: Optional ClientMods root
+            - text: C:/Users/user/source/repos/mal1n1n/MGStalker/src/ClientMods
+        - generic [ref=f3e21]:
+          - generic [ref=f3e22]: Recent projects
+          - combobox "Recent projects" [ref=f3e23]:
+            - option "Recent projects"
+            - option "C:/Users/user/source/repos/mal1n1n/MGStalker/src/ClientMods" [selected]
+            - option "C:\\Users\\user\\Documents\\DayZ Projects"
+        - generic [ref=f3e24]:
+          - generic [ref=f3e25]: Preview language
+          - combobox "Preview language" [ref=f3e26]:
+            - option "original" [selected]
+            - option "english"
+            - option "czech"
+            - option "german"
+            - option "russian"
+            - option "polish"
+            - option "hungarian"
+            - option "italian"
+            - option "spanish"
+            - option "french"
+            - option "chinese"
+            - option "japanese"
+            - option "portuguese"
+            - option "chinesesimp"
+            - option
+        - generic [ref=f3e27]:
+          - generic [ref=f3e28]:
+            - generic [ref=f3e29]: Width
+            - spinbutton "Width" [ref=f3e30]: "1280"
+          - generic [ref=f3e31]:
+            - generic [ref=f3e32]: Height
+            - spinbutton "Height" [ref=f3e33]: "720"
+        - button "Open Layout" [active] [ref=f3e34] [cursor=pointer]
+        - generic [ref=f3e35]:
+          - button "Load Settings" [ref=f3e36] [cursor=pointer]
+          - button "Save Settings" [ref=f3e37] [cursor=pointer]
+      - generic [ref=f3e38]: Layout Tree
+      - generic [ref=f3e39]:
+        - generic [ref=f3e104]:
+          - text: PDAFrame
+          - generic [ref=f3e105]: FrameWidgetClass
+        - generic [ref=f3e106]:
+          - text: ItemSlot
+          - generic [ref=f3e107]: FrameWidgetClass
+  - main [ref=f3e40]:
+    - generic [ref=f3e41]:
+      - generic [ref=f3e42]:
+        - generic [ref=f3e43]:
+          - generic [ref=f3e44]: G
+          - strong [ref=f3e45]: trader_menu.layout
+          - button "Close layout" [ref=f3e46] [cursor=pointer]: x
+        - generic [ref=f3e47]: 104 widgets
+      - generic "Preview toolbar" [ref=f3e48]:
+        - button "Toggle grid" [ref=f3e49] [cursor=pointer]
+        - button "Toggle snap" [ref=f3e50] [cursor=pointer]
+        - button "Not implemented" [disabled] [ref=f3e51]
+        - button "Preview normal state" [ref=f3e52] [cursor=pointer]
+        - button "Preview disabled state" [ref=f3e53] [cursor=pointer]
+        - button "Selection color" [ref=f3e54] [cursor=pointer]
+        - button "Scaled" [ref=f3e55] [cursor=pointer]
+        - button "Grid Size" [ref=f3e56] [cursor=pointer]
+        - button "Snap Margin" [ref=f3e57] [cursor=pointer]
+        - 'button "Zoom: 100%" [ref=f3e58] [cursor=pointer]'
+        - combobox "Preview resolution" [ref=f3e59]:
+          - option "FitToWindow"
+          - option "800x600"
+          - option "1280x720" [selected]
+          - option "1280x800"
+          - option "1280x1024"
+          - option "1360x768"
+          - option "1366x768"
+          - option "1440x900"
+          - option "1600x900"
+          - option "1680x1050"
+          - option "1920x1080"
+          - option "2560x1440"
+          - option "3840x2160"
+        - combobox "Preview state" [ref=f3e60]:
+          - option "normal" [selected]
+          - option "hover"
+          - option "selected"
+          - option "disabled"
+        - spinbutton "Grid size": "8"
+        - checkbox "Show grid" [checked]
+        - checkbox "Snap to grid"
+        - generic [ref=f3e61]: 1280x720
+    - generic [ref=f3e64]:
+      - generic [ref=f3e65]:
+        - tablist "Layout diagnostics" [ref=f3e66]:
+          - tab "Source" [selected] [ref=f3e67] [cursor=pointer]
+          - tab "Console 15" [ref=f3e339] [cursor=pointer]:
+            - text: Console
+            - generic [ref=f3e69]: "15"
+          - tab "Diagnostics" [ref=f3e70] [cursor=pointer]
+          - tab "Model" [ref=f3e71] [cursor=pointer]
+        - generic [ref=f3e72]:
+          - button "Refresh" [ref=f3e73] [cursor=pointer]
+          - button "Edit" [ref=f3e74] [cursor=pointer]
+          - button "Diff" [disabled] [ref=f3e75]
+          - button "Apply" [disabled] [ref=f3e76]
+          - button "Revert" [disabled] [ref=f3e77]
+          - button "Undo" [disabled] [ref=f3e78]
+          - button "Redo" [disabled] [ref=f3e79]
+      - tabpanel [ref=f3e81]:
+        - textbox [ref=f3e82]: "FrameWidgetClass PDAFrame { position -0.001266 -0.000451 size 1.000832 1.017749 { FrameWidgetClass ItemSlot { position 0.538318 0.273377 size 0.163915 0.197702 color 0.898 1 1 0.85 } } }"
+  - complementary [ref=f3e83]:
+    - generic [ref=f3e84]:
+      - generic [ref=f3e85]: Inspector
+      - generic [ref=f3e86]:
+        - generic [ref=f3e109]:
+          - term [ref=f3e110]: Name
+          - definition [ref=f3e111]: PDAFrame
+          - term [ref=f3e112]: Type
+          - definition [ref=f3e113]: FrameWidgetClass
+          - term [ref=f3e114]: Line
+          - definition [ref=f3e115]: "1"
+          - term [ref=f3e116]: Box
+          - definition [ref=f3e117]: "-1.6, -0.3, 1281.1, 732.8"
+          - term [ref=f3e118]: Text
+          - definition [ref=f3e119]
+          - term [ref=f3e120]: Font
+          - definition [ref=f3e121]
+          - term [ref=f3e122]: Style
+          - definition [ref=f3e123]
+          - term [ref=f3e124]: Priority
+          - definition [ref=f3e125]: "0"
+        - generic [ref=f3e126]:
+          - tree "Widget classes" [ref=f3e127]:
+            - group [ref=f3e128]:
+              - generic "v Basic" [ref=f3e129] [cursor=pointer]
+              - generic [ref=f3e130]:
+                - button "ButtonWidget" [ref=f3e131] [cursor=pointer]
+                - button "CheckBoxWidget" [ref=f3e132] [cursor=pointer]
+                - button "ContentWidget" [ref=f3e133] [cursor=pointer]
+                - button "EditBoxWidget" [ref=f3e134] [cursor=pointer]
+                - button "EmbededWidget" [ref=f3e135] [cursor=pointer]
+                - button "FrameWidget" [ref=f3e136] [cursor=pointer]
+                - button "ImageWidget" [ref=f3e137] [cursor=pointer]
+                - button "MultilineEditBoxWidget" [ref=f3e138] [cursor=pointer]
+                - button "MultilineTextWidget" [ref=f3e139] [cursor=pointer]
+                - button "PanelWidget" [ref=f3e140] [cursor=pointer]
+                - button "PasswordEditBoxWidget" [ref=f3e141] [cursor=pointer]
+                - button "ProgressBarWidget" [ref=f3e142] [cursor=pointer]
+                - button "RichTextWidget" [ref=f3e143] [cursor=pointer]
+                - button "SimpleProgressBarWidget" [ref=f3e144] [cursor=pointer]
+                - button "SliderWidget" [ref=f3e145] [cursor=pointer]
+                - button "TextListboxWidget" [ref=f3e146] [cursor=pointer]
+                - button "TextWidget" [ref=f3e147] [cursor=pointer]
+                - button "WindowWidget" [ref=f3e148] [cursor=pointer]
+                - button "XComboBoxWidget" [ref=f3e149] [cursor=pointer]
+            - group [ref=f3e150]:
+              - generic "v Game" [ref=f3e151] [cursor=pointer]
+              - generic [ref=f3e152]:
+                - button "HtmlWidget" [ref=f3e153] [cursor=pointer]
+                - button "ItemPreviewWidget" [ref=f3e154] [cursor=pointer]
+                - button "MapWidget" [ref=f3e155] [cursor=pointer]
+                - button "PlayerPreviewWidget" [ref=f3e156] [cursor=pointer]
+                - button "ServerBrowserWidget" [ref=f3e157] [cursor=pointer]
+                - button "SmartPanelWidget" [ref=f3e158] [cursor=pointer]
+                - button "ThreeStateCheckboxWidget" [ref=f3e159] [cursor=pointer]
+            - group [ref=f3e160]:
+              - generic "v Helpers" [ref=f3e161] [cursor=pointer]
+              - generic [ref=f3e162]:
+                - button "GridSpacerWidget" [ref=f3e163] [cursor=pointer]
+                - button "ScrollWidget" [ref=f3e164] [cursor=pointer]
+                - button "WrapSpacerWidget" [ref=f3e165] [cursor=pointer]
+            - group [ref=f3e166]:
+              - generic "v Special" [ref=f3e167] [cursor=pointer]
+              - generic [ref=f3e168]:
+                - button "CanvasWidget" [ref=f3e169] [cursor=pointer]
+                - button "GenericListboxWidget" [ref=f3e170] [cursor=pointer]
+                - button "RenderTargetWidget" [ref=f3e171] [cursor=pointer]
+                - button "RTTextureWidget" [ref=f3e172] [cursor=pointer]
+                - button "UniversalListboxWidget" [ref=f3e173] [cursor=pointer]
+                - button "VideoWidget" [ref=f3e174] [cursor=pointer]
+          - generic [ref=f3e175]:
+            - textbox [ref=f3e176]: FrameWidget
+            - button "Add Child" [ref=f3e177] [cursor=pointer]
+          - generic [ref=f3e178]:
+            - combobox [ref=f3e179]
+            - button "Reparent" [disabled] [ref=f3e180]
+            - button "Delete" [ref=f3e181] [cursor=pointer]
+      - generic [ref=f3e87]: Typed Properties
+      - generic [ref=f3e88]:
+        - generic [ref=f3e182]:
+          - generic [ref=f3e183]: Geometry
+          - generic [ref=f3e184]:
+            - strong [ref=f3e185]: PDAFrame
+            - code [ref=f3e186]: FrameWidgetClass
+          - generic [ref=f3e187]:
+            - generic [ref=f3e188]:
+              - generic [ref=f3e189]: X
+              - spinbutton "X %" [ref=f3e190]: "-0.1266"
+              - combobox [ref=f3e191]:
+                - option "%" [selected]
+                - option "px"
+            - generic [ref=f3e192]:
+              - generic [ref=f3e193]: "Y"
+              - spinbutton "Y %" [ref=f3e194]: "-0.0451"
+              - combobox [ref=f3e195]:
+                - option "%" [selected]
+                - option "px"
+            - generic [ref=f3e196]:
+              - generic [ref=f3e197]: W
+              - spinbutton "W %" [ref=f3e198]: "100.0832"
+              - combobox [ref=f3e199]:
+                - option "%" [selected]
+                - option "px"
+            - generic [ref=f3e200]:
+              - generic [ref=f3e201]: H
+              - spinbutton "H %" [ref=f3e202]: "101.7749"
+              - combobox [ref=f3e203]:
+                - option "%" [selected]
+                - option "px"
+          - generic [ref=f3e204]:
+            - generic [ref=f3e205]:
+              - generic [ref=f3e206]: H anchor
+              - combobox "H anchor" [ref=f3e207]:
+                - option "left" [selected]
+                - option "center"
+                - option "right"
+            - generic [ref=f3e208]:
+              - generic [ref=f3e209]: V anchor
+              - combobox "V anchor" [ref=f3e210]:
+                - option "top" [selected]
+                - option "center"
+                - option "bottom"
+          - generic "Anchor presets" [ref=f3e211]:
+            - button "left top" [ref=f3e212] [cursor=pointer]
+            - button "center top" [ref=f3e213] [cursor=pointer]
+            - button "right top" [ref=f3e214] [cursor=pointer]
+            - button "left center" [ref=f3e215] [cursor=pointer]
+            - button "center center" [ref=f3e216] [cursor=pointer]
+            - button "right center" [ref=f3e217] [cursor=pointer]
+            - button "left bottom" [ref=f3e218] [cursor=pointer]
+            - button "center bottom" [ref=f3e219] [cursor=pointer]
+            - button "right bottom" [ref=f3e220] [cursor=pointer]
+          - button "Save Geometry" [ref=f3e221] [cursor=pointer]
+        - generic [ref=f3e222]: Layout
+        - generic [ref=f3e223]:
+          - generic [ref=f3e224]:
+            - generic [ref=f3e225]: Position
+            - code [ref=f3e226]: position
+          - generic [ref=f3e227]:
+            - generic [ref=f3e228]:
+              - generic [ref=f3e229]: x
+              - spinbutton "x" [ref=f3e230]: "-0.001266"
+            - generic [ref=f3e231]:
+              - generic [ref=f3e232]: "y"
+              - spinbutton "y" [ref=f3e233]: "-0.000451"
+          - button "Save" [ref=f3e234] [cursor=pointer]
+        - generic [ref=f3e235]:
+          - generic [ref=f3e236]:
+            - generic [ref=f3e237]: Size
+            - code [ref=f3e238]: size
+          - generic [ref=f3e239]:
+            - generic [ref=f3e240]:
+              - generic [ref=f3e241]: w
+              - spinbutton "w" [ref=f3e242]: "1.000832"
+            - generic [ref=f3e243]:
+              - generic [ref=f3e244]: h
+              - spinbutton "h" [ref=f3e245]: "1.017749"
+          - button "Save" [ref=f3e246] [cursor=pointer]
+        - generic [ref=f3e247]:
+          - generic [ref=f3e248]:
+            - generic [ref=f3e249]: Exact X
+            - code [ref=f3e250]: hexactpos
+          - generic [ref=f3e251]:
+            - checkbox "Exact X" [ref=f3e252]
+            - generic [ref=f3e253]: Exact X
+          - button "Save" [ref=f3e254] [cursor=pointer]
+        - generic [ref=f3e255]:
+          - generic [ref=f3e256]:
+            - generic [ref=f3e257]: Exact Y
+            - code [ref=f3e258]: vexactpos
+          - generic [ref=f3e259]:
+            - checkbox "Exact Y" [ref=f3e260]
+            - generic [ref=f3e261]: Exact Y
+          - button "Save" [ref=f3e262] [cursor=pointer]
+        - generic [ref=f3e263]:
+          - generic [ref=f3e264]:
+            - generic [ref=f3e265]: Exact W
+            - code [ref=f3e266]: hexactsize
+          - generic [ref=f3e267]:
+            - checkbox "Exact W" [ref=f3e268]
+            - generic [ref=f3e269]: Exact W
+          - button "Save" [ref=f3e270] [cursor=pointer]
+        - generic [ref=f3e271]:
+          - generic [ref=f3e272]:
+            - generic [ref=f3e273]: Exact H
+            - code [ref=f3e274]: vexactsize
+          - generic [ref=f3e275]:
+            - checkbox "Exact H" [ref=f3e276]
+            - generic [ref=f3e277]: Exact H
+          - button "Save" [ref=f3e278] [cursor=pointer]
+        - generic [ref=f3e279]:
+          - generic [ref=f3e280]:
+            - generic [ref=f3e281]: H Align
+            - code [ref=f3e282]: halign
+          - combobox [ref=f3e283]:
+            - option "left" [selected]
+            - option "center"
+            - option "right"
+          - button "Save" [ref=f3e284] [cursor=pointer]
+        - generic [ref=f3e285]:
+          - generic [ref=f3e286]:
+            - generic [ref=f3e287]: V Align
+            - code [ref=f3e288]: valign
+          - combobox [ref=f3e289]:
+            - option "top" [selected]
+            - option "center"
+            - option "bottom"
+          - button "Save" [ref=f3e290] [cursor=pointer]
+        - generic [ref=f3e291]: State
+        - generic [ref=f3e292]:
+          - generic [ref=f3e293]:
+            - generic [ref=f3e294]: Visible
+            - code [ref=f3e295]: visible
+          - generic [ref=f3e296]:
+            - checkbox "Visible" [checked] [ref=f3e297]
+            - generic [ref=f3e298]: Visible
+          - button "Save" [ref=f3e299] [cursor=pointer]
+        - generic [ref=f3e300]:
+          - generic [ref=f3e301]:
+            - generic [ref=f3e302]: Ignore Pointer
+            - code [ref=f3e303]: ignorepointer
+          - generic [ref=f3e304]:
+            - checkbox "Ignore Pointer" [ref=f3e305]
+            - generic [ref=f3e306]: Ignore Pointer
+          - button "Save" [ref=f3e307] [cursor=pointer]
+        - generic [ref=f3e308]:
+          - generic [ref=f3e309]:
+            - generic [ref=f3e310]: Priority
+            - code [ref=f3e311]: priority
+          - spinbutton [ref=f3e312]: "0"
+          - button "Save" [ref=f3e313] [cursor=pointer]
+        - generic [ref=f3e314]: Style
+        - generic [ref=f3e315]:
+          - generic [ref=f3e316]:
+            - generic [ref=f3e317]: Style
+            - code [ref=f3e318]: style
+          - textbox [ref=f3e319]
+          - button "Save" [ref=f3e320] [cursor=pointer]
+        - generic [ref=f3e321]:
+          - generic [ref=f3e322]:
+            - generic [ref=f3e323]: Font
+            - code [ref=f3e324]: font
+          - textbox [ref=f3e325]
+          - button "Save" [ref=f3e326] [cursor=pointer]
+        - generic [ref=f3e327]:
+          - generic [ref=f3e328]:
+            - generic [ref=f3e329]: Color
+            - code [ref=f3e330]: color
+          - generic [ref=f3e331]:
+            - textbox [ref=f3e332]: "#ffffff"
+            - generic [ref=f3e333]:
+              - generic [ref=f3e334]: a
+              - spinbutton "a" [ref=f3e335]: "1"
+          - button "Save" [ref=f3e336] [cursor=pointer]
+      - generic [ref=f3e89]: Raw Property
+      - generic [ref=f3e90]:
+        - generic [ref=f3e91]:
+          - generic [ref=f3e92]: Key
+          - textbox "Key" [ref=f3e93]:
+            - /placeholder: text, position, size, image0
+            - text: position
+        - generic [ref=f3e94]:
+          - generic [ref=f3e95]: Values
+          - textbox "Values" [ref=f3e96]:
+            - /placeholder: Space-separated values
+            - text: "-0.001266 -0.000451"
+        - button "Save Property" [ref=f3e97] [cursor=pointer]
+      - generic [ref=f3e98]: Images
+      - paragraph [ref=f3e337]: No image slots.
+    - generic [ref=f3e100]:
+      - generic [ref=f3e101]: Diagnostics
+      - paragraph [ref=f3e338]: No diagnostics.

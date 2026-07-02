@@ -16,7 +16,8 @@ test("project settings read defaults and persist normalized patches", () => {
   assert.equal(initial.exists, false);
   assert.equal(initial.settings.preview.width, 1280);
   assert.equal(initial.settings.preview.state, "normal");
-  assert.equal(initial.settings.build.allowDiagnostics, false);
+  assert.equal("build" in initial.settings, false);
+  assert.equal("legacyRelease" in initial.settings, false);
 
   const written = writeProjectSettings(projectRoot, {
     layoutPath: "layouts/menu.layout",
@@ -28,8 +29,9 @@ test("project settings read defaults and persist normalized patches", () => {
     },
     build: {
       outputRoot: ".dzui/out",
-      allowDiagnostics: true,
-      timeoutMs: 15000,
+    },
+    legacyRelease: {
+      itemId: "123",
     },
   });
 
@@ -40,9 +42,8 @@ test("project settings read defaults and persist normalized patches", () => {
   assert.equal(written.settings.preview.height, 1080);
   assert.equal(written.settings.preview.language, "Russian");
   assert.equal(written.settings.preview.state, "disabled");
-  assert.equal(written.settings.build.outputRoot, ".dzui/out");
-  assert.equal(written.settings.build.allowDiagnostics, true);
-  assert.equal(written.settings.build.timeoutMs, 15000);
+  assert.equal("build" in written.settings, false);
+  assert.equal("legacyRelease" in written.settings, false);
   assert.deepEqual(written.settings.recent.layoutPaths, ["layouts/menu.layout"]);
 
   const reloaded = readProjectSettings(projectRoot);

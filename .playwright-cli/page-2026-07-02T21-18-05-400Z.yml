@@ -1,0 +1,120 @@
+- generic [ref=f3e2]:
+  - navigation "Workspace" [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - strong [ref=f3e5]: DayZ IDE
+      - generic [ref=f3e6]: UI Editor
+    - button "Editor" [ref=f3e7] [cursor=pointer]
+    - button "Project" [ref=f3e8] [cursor=pointer]
+    - button "Assets" [ref=f3e9] [cursor=pointer]
+    - button "MCP" [ref=f3e10] [cursor=pointer]
+  - complementary [ref=f3e11]:
+    - generic [ref=f3e12]:
+      - generic [ref=f3e13]: Open Layout
+      - generic [ref=f3e14]:
+        - generic [ref=f3e15]:
+          - generic [ref=f3e16]: Layout file
+          - textbox "Layout file" [ref=f3e17]: fixtures/layouts/pda_minimal.layout
+        - generic [ref=f3e18]:
+          - generic [ref=f3e19]: Project root
+          - textbox "Project root" [ref=f3e20]:
+            - /placeholder: Optional ClientMods root
+        - generic [ref=f3e21]:
+          - generic [ref=f3e22]: Recent projects
+          - combobox "Recent projects" [ref=f3e23]:
+            - option "Recent projects"
+            - option "C:\\Users\\user\\Documents\\DayZ Projects" [selected]
+            - option "C:/Users/user/source/repos/mal1n1n/MGStalker/src/ClientMods"
+        - generic [ref=f3e24]:
+          - generic [ref=f3e25]: Preview language
+          - combobox "Preview language" [ref=f3e26]:
+            - option "English" [selected]
+        - generic [ref=f3e27]:
+          - generic [ref=f3e28]:
+            - generic [ref=f3e29]: Width
+            - spinbutton "Width" [ref=f3e30]: "1280"
+          - generic [ref=f3e31]:
+            - generic [ref=f3e32]: Height
+            - spinbutton "Height" [ref=f3e33]: "720"
+        - button "Open Layout" [ref=f3e34] [cursor=pointer]
+        - generic [ref=f3e35]:
+          - button "Load Settings" [ref=f3e36] [cursor=pointer]
+          - button "Save Settings" [ref=f3e37] [cursor=pointer]
+      - generic [ref=f3e38]: Layout Tree
+  - main [ref=f3e40]:
+    - generic [ref=f3e41]:
+      - generic [ref=f3e42]:
+        - generic [ref=f3e43]:
+          - generic [ref=f3e44]: G
+          - strong [ref=f3e45]: No layout loaded
+          - button "Close layout" [ref=f3e46] [cursor=pointer]: x
+        - generic [ref=f3e47]: Idle
+      - generic "Preview toolbar" [ref=f3e48]:
+        - button "Toggle grid" [ref=f3e49] [cursor=pointer]
+        - button "Toggle snap" [ref=f3e50] [cursor=pointer]
+        - button "Not implemented" [disabled] [ref=f3e51]
+        - button "Preview normal state" [ref=f3e52] [cursor=pointer]
+        - button "Preview disabled state" [ref=f3e53] [cursor=pointer]
+        - button "Selection color" [ref=f3e54] [cursor=pointer]
+        - button "Scaled" [ref=f3e55] [cursor=pointer]
+        - button "Grid Size" [ref=f3e56] [cursor=pointer]
+        - button "Snap Margin" [ref=f3e57] [cursor=pointer]
+        - 'button "Zoom: 100%" [ref=f3e58] [cursor=pointer]'
+        - combobox "Preview resolution" [ref=f3e59]:
+          - option "FitToWindow"
+          - option "800x600"
+          - option "1280x720" [selected]
+          - option "1280x800"
+          - option "1280x1024"
+          - option "1360x768"
+          - option "1366x768"
+          - option "1440x900"
+          - option "1600x900"
+          - option "1680x1050"
+          - option "1920x1080"
+          - option "2560x1440"
+          - option "3840x2160"
+        - combobox "Preview state" [ref=f3e60]:
+          - option "normal" [selected]
+          - option "hover"
+          - option "selected"
+          - option "disabled"
+        - spinbutton "Grid size": "8"
+        - checkbox "Show grid" [checked]
+        - checkbox "Snap to grid"
+        - generic [ref=f3e61]: 1280x720
+    - generic [ref=f3e64]:
+      - generic [ref=f3e65]:
+        - tablist "Layout diagnostics" [ref=f3e66]:
+          - tab "Source" [selected] [ref=f3e67] [cursor=pointer]
+          - tab "Console 0" [ref=f3e68] [cursor=pointer]:
+            - text: Console
+            - generic [ref=f3e69]: "0"
+          - tab "Diagnostics" [ref=f3e70] [cursor=pointer]
+          - tab "Model" [ref=f3e71] [cursor=pointer]
+        - generic [ref=f3e72]:
+          - button "Refresh" [ref=f3e73] [cursor=pointer]
+          - button "Edit" [ref=f3e74] [cursor=pointer]
+          - button "Diff" [ref=f3e75] [cursor=pointer]
+          - button "Apply" [ref=f3e76] [cursor=pointer]
+          - button "Revert" [ref=f3e77] [cursor=pointer]
+          - button "Undo" [ref=f3e78] [cursor=pointer]
+          - button "Redo" [ref=f3e79] [cursor=pointer]
+      - tabpanel [ref=f3e81]:
+        - textbox [ref=f3e82]
+  - complementary [ref=f3e83]:
+    - generic [ref=f3e84]:
+      - generic [ref=f3e85]: Inspector
+      - generic [ref=f3e87]: Typed Properties
+      - generic [ref=f3e89]: Raw Property
+      - generic [ref=f3e90]:
+        - generic [ref=f3e91]:
+          - generic [ref=f3e92]: Key
+          - textbox "Key" [ref=f3e93]:
+            - /placeholder: text, position, size, image0
+        - generic [ref=f3e94]:
+          - generic [ref=f3e95]: Values
+          - textbox "Values" [ref=f3e96]:
+            - /placeholder: Space-separated values
+        - button "Save Property" [ref=f3e97] [cursor=pointer]
+      - generic [ref=f3e98]: Images
+    - generic [ref=f3e101]: Diagnostics

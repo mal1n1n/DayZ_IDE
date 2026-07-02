@@ -1,3 +1,8 @@
+import { loadNativeTextureBitmap } from "./native-textures.mjs";
+
+const recentProjectsStorageKey = "dzui.recentProjects.v1";
+const recentProjectsLimit = 10;
+
 const state = {
   data: null,
   selectedId: null,
@@ -17,41 +22,60 @@ const state = {
   styleList: null,
   fontRegistry: null,
   layoutPatch: null,
+  projectFileTree: null,
+  projectTreeOpen: new Set([""]),
   showGrid: true,
   snapToGrid: false,
   gridSize: 8,
+  workspace: "editor",
+  environmentReady: false,
+  bottomDockTab: "source",
+  previewResolutionMode: "fixed",
+  recentProjects: [],
+  layoutConsole: [],
+  layoutConsoleSeq: 0,
+  layoutConsoleSeen: new Set(),
 };
 
 const els = {
+  app: document.querySelector(".app"),
+  setupOverlay: document.getElementById("setupOverlay"),
+  setupProjectsRoot: document.getElementById("setupProjectsRoot"),
+  setupStatus: document.getElementById("setupStatus"),
+  setupUseDefaults: document.getElementById("setupUseDefaults"),
+  setupSave: document.getElementById("setupSave"),
+  workspaceTabs: [...document.querySelectorAll("[data-workspace-target]")],
+  workspacePanels: [...document.querySelectorAll("[data-workspace-panel]")],
   form: document.getElementById("openForm"),
   layoutPath: document.getElementById("layoutPath"),
   projectRoot: document.getElementById("projectRoot"),
+  recentProjectRoot: document.getElementById("recentProjectRoot"),
+  projectBrowserRoot: document.getElementById("projectBrowserRoot"),
+  recentProjectBrowserRoot: document.getElementById("recentProjectBrowserRoot"),
+  projectFileSearch: document.getElementById("projectFileSearch"),
+  openProjectFolder: document.getElementById("openProjectFolder"),
+  projectFileCount: document.getElementById("projectFileCount"),
+  projectFileTree: document.getElementById("projectFileTree"),
   compareLayoutPath: document.getElementById("compareLayoutPath"),
   layoutPatchPath: document.getElementById("layoutPatchPath"),
   width: document.getElementById("viewportWidth"),
   height: document.getElementById("viewportHeight"),
   previewLanguage: document.getElementById("previewLanguage"),
-  addonSource: document.getElementById("addonSource"),
-  buildOutput: document.getElementById("buildOutput"),
-  buildPrefix: document.getElementById("buildPrefix"),
-  toolsRoot: document.getElementById("toolsRoot"),
-  workshopItemId: document.getElementById("workshopItemId"),
-  workshopTitle: document.getElementById("workshopTitle"),
-  workshopChangeNote: document.getElementById("workshopChangeNote"),
-  workshopContentRoot: document.getElementById("workshopContentRoot"),
-  workshopPreviewImage: document.getElementById("workshopPreviewImage"),
-  workshopCommandJson: document.getElementById("workshopCommandJson"),
-  engineDumpPath: document.getElementById("engineDumpPath"),
-  expectedScreenshotPath: document.getElementById("expectedScreenshotPath"),
-  actualScreenshotPath: document.getElementById("actualScreenshotPath"),
-  pixelDiffPath: document.getElementById("pixelDiffPath"),
   title: document.getElementById("title"),
   status: document.getElementById("status"),
   viewportBadge: document.getElementById("viewportBadge"),
+  previewResolution: document.getElementById("previewResolution"),
   previewState: document.getElementById("previewState"),
   showGrid: document.getElementById("showGrid"),
   snapToGrid: document.getElementById("snapToGrid"),
   gridSize: document.getElementById("gridSize"),
+  stage: document.querySelector(".stage"),
+  workbenchGridIcon: document.getElementById("workbenchGridIcon"),
+  workbenchSnapIcon: document.getElementById("workbenchSnapIcon"),
+  scaledPreview: document.getElementById("scaledPreview"),
+  gridSizeButton: document.getElementById("gridSizeButton"),
+  snapMarginButton: document.getElementById("snapMarginButton"),
+  zoomButton: document.getElementById("zoomButton"),
   tree: document.getElementById("tree"),
   details: document.getElementById("details"),
   typedProperties: document.getElementById("typedProperties"),
@@ -59,6 +83,14 @@ const els = {
   diagnostics: document.getElementById("diagnostics"),
   canvas: document.getElementById("canvas"),
   sourceView: document.getElementById("sourceView"),
+  dockTabs: [...document.querySelectorAll("[data-dock-tab]")],
+  dockPanes: [...document.querySelectorAll("[data-dock-panel]")],
+  dockActions: [...document.querySelectorAll("[data-dock-actions]")],
+  layoutConsole: document.getElementById("layoutConsole"),
+  layoutConsoleBadge: document.getElementById("layoutConsoleBadge"),
+  layoutDiagnostics: document.getElementById("layoutDiagnostics"),
+  layoutModel: document.getElementById("layoutModel"),
+  clearLayoutConsole: document.getElementById("clearLayoutConsole"),
   refreshSource: document.getElementById("refreshSource"),
   editSource: document.getElementById("editSource"),
   diffSource: document.getElementById("diffSource"),
@@ -71,7 +103,6 @@ const els = {
   propertyValues: document.getElementById("propertyValues"),
   loadSettings: document.getElementById("loadSettings"),
   saveSettings: document.getElementById("saveSettings"),
-  validateProject: document.getElementById("validateProject"),
   pluginSdk: document.getElementById("pluginSdk"),
   pluginPackagePath: document.getElementById("pluginPackagePath"),
   pluginTrustPolicyPath: document.getElementById("pluginTrustPolicyPath"),
@@ -84,22 +115,11 @@ const els = {
   pluginTrustInstall: document.getElementById("pluginTrustInstall"),
   pluginPackageVerify: document.getElementById("pluginPackageVerify"),
   pluginCommandRun: document.getElementById("pluginCommandRun"),
-  toolchainReadiness: document.getElementById("toolchainReadiness"),
-  enginePlan: document.getElementById("enginePlan"),
-  previewWorkspace: document.getElementById("previewWorkspace"),
-  geometryDiff: document.getElementById("geometryDiff"),
-  pixelDiff: document.getElementById("pixelDiff"),
-  captureRun: document.getElementById("captureRun"),
   layoutDiff: document.getElementById("layoutDiff"),
   patchGenerate: document.getElementById("patchGenerate"),
   patchResolve: document.getElementById("patchResolve"),
   patchDryRun: document.getElementById("patchDryRun"),
   patchApply: document.getElementById("patchApply"),
-  buildPlan: document.getElementById("buildPlan"),
-  runBuild: document.getElementById("runBuild"),
-  workshopPlan: document.getElementById("workshopPlan"),
-  workshopRun: document.getElementById("workshopRun"),
-  generateController: document.getElementById("generateController"),
   stringTableForm: document.getElementById("stringTableForm"),
   stringKey: document.getElementById("stringKey"),
   stringEnglish: document.getElementById("stringEnglish"),
@@ -131,17 +151,47 @@ const els = {
   atlasPadding: document.getElementById("atlasPadding"),
   atlasPowerOfTwo: document.getElementById("atlasPowerOfTwo"),
   packAtlas: document.getElementById("packAtlas"),
-  textureSource: document.getElementById("textureSource"),
-  textureOutput: document.getElementById("textureOutput"),
-  textureFormat: document.getElementById("textureFormat"),
-  textureConvertPlan: document.getElementById("textureConvertPlan"),
-  textureConvertRun: document.getElementById("textureConvertRun"),
   imageSearch: document.getElementById("imageSearch"),
   loadImages: document.getElementById("loadImages"),
   assetBrowser: document.getElementById("assetBrowser"),
+  mcpPort: document.getElementById("mcpPort"),
+  mcpStart: document.getElementById("mcpStart"),
+  mcpStop: document.getElementById("mcpStop"),
+  mcpStatusText: document.getElementById("mcpStatusText"),
+  mcpStateDot: document.getElementById("mcpStateDot"),
+  mcpEndpoint: document.getElementById("mcpEndpoint"),
+  mcpEndpointCopy: document.getElementById("mcpEndpointCopy"),
+  mcpLogs: document.getElementById("mcpLogs"),
 };
 
 const ctx = els.canvas.getContext("2d");
+
+function on(element, eventName, handler) {
+  if (element) element.addEventListener(eventName, handler);
+}
+
+on(els.setupUseDefaults, "click", () => {
+  if (!state.environmentStatus?.defaults) return;
+  els.setupProjectsRoot.value = state.environmentStatus.defaults.projectsRoot;
+});
+
+on(els.setupSave, "click", () => {
+  saveEnvironmentSetup();
+});
+
+for (const tab of els.workspaceTabs) {
+  tab.addEventListener("click", () => setWorkspace(tab.dataset.workspaceTarget));
+}
+
+for (const tab of els.dockTabs) {
+  tab.addEventListener("click", () => setDockTab(tab.dataset.dockTab));
+}
+
+on(els.clearLayoutConsole, "click", () => {
+  state.layoutConsole = [];
+  state.layoutConsoleSeen = new Set();
+  renderLayoutConsole();
+});
 
 els.form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -149,20 +199,70 @@ els.form.addEventListener("submit", (event) => {
 });
 
 els.previewLanguage.addEventListener("change", () => {
+  if (!state.environmentReady) return;
   openLayout();
 });
 
 els.previewState.addEventListener("change", () => {
+  if (!state.environmentReady) return;
   openLayout();
+});
+
+on(els.previewResolution, "change", () => {
+  applyPreviewResolution();
+});
+
+on(els.workbenchGridIcon, "click", () => {
+  els.showGrid.checked = !els.showGrid.checked;
+  state.showGrid = els.showGrid.checked;
+  syncWorkbenchToolbarState();
+  draw();
+});
+
+on(els.workbenchSnapIcon, "click", () => {
+  els.snapToGrid.checked = !els.snapToGrid.checked;
+  state.snapToGrid = els.snapToGrid.checked;
+  syncWorkbenchToolbarState();
+  setStatus(state.snapToGrid ? "Snap enabled" : "Snap disabled");
+});
+
+on(els.scaledPreview, "click", () => {
+  els.scaledPreview.classList.toggle("active");
+  syncCanvasViewportMode();
+  draw();
+  setStatus(els.scaledPreview.classList.contains("active") ? "Scaled mode" : "Unscaled mode");
+});
+
+on(els.gridSizeButton, "click", () => {
+  const sizes = [4, 8, 16, 32, 64];
+  const current = readGridSize();
+  const next = sizes[(sizes.indexOf(current) + 1 || 1) % sizes.length] ?? 8;
+  els.gridSize.value = String(next);
+  state.gridSize = next;
+  setStatus(`Grid size ${next}`);
+  draw();
+});
+
+on(els.snapMarginButton, "click", () => {
+  els.snapToGrid.checked = !els.snapToGrid.checked;
+  state.snapToGrid = els.snapToGrid.checked;
+  syncWorkbenchToolbarState();
+  setStatus(state.snapToGrid ? "Snap margin enabled" : "Snap margin disabled");
+});
+
+on(els.zoomButton, "click", () => {
+  setStatus("Zoom 100%");
 });
 
 els.showGrid.addEventListener("change", () => {
   state.showGrid = els.showGrid.checked;
+  syncWorkbenchToolbarState();
   draw();
 });
 
 els.snapToGrid.addEventListener("change", () => {
   state.snapToGrid = els.snapToGrid.checked;
+  syncWorkbenchToolbarState();
   setStatus(state.snapToGrid ? "Snap enabled" : "Snap disabled");
 });
 
@@ -181,6 +281,16 @@ els.propertyForm.addEventListener("submit", (event) => {
 });
 
 els.typedProperties.addEventListener("click", (event) => {
+  const geometrySave = event.target.closest("[data-save-geometry]");
+  if (geometrySave) {
+    saveGeometryInspector();
+    return;
+  }
+  const anchorButton = event.target.closest("[data-geometry-anchor]");
+  if (anchorButton) {
+    selectGeometryAnchor(anchorButton.dataset.geometryAnchor);
+    return;
+  }
   const button = event.target.closest("[data-save-property]");
   if (!button) return;
   saveTypedProperty(button.closest(".typedProp"));
@@ -201,8 +311,51 @@ els.saveSettings.addEventListener("click", () => {
   saveProjectSettings();
 });
 
-els.validateProject.addEventListener("click", () => {
-  loadProjectValidation();
+on(els.projectRoot, "change", () => {
+  const project = els.projectRoot.value.trim();
+  if (els.projectBrowserRoot) els.projectBrowserRoot.value = project;
+  rememberProjectRoot(project);
+});
+
+on(els.projectBrowserRoot, "change", () => {
+  const value = els.projectBrowserRoot.value.trim();
+  if (value) {
+    els.projectRoot.value = value;
+    rememberProjectRoot(value);
+  }
+});
+
+on(els.recentProjectRoot, "change", () => {
+  selectRecentProject(els.recentProjectRoot.value);
+});
+
+on(els.recentProjectBrowserRoot, "change", () => {
+  selectRecentProject(els.recentProjectBrowserRoot.value);
+});
+
+on(els.openProjectFolder, "click", () => {
+  loadProjectFiles();
+});
+
+on(els.projectFileSearch, "keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  renderProjectFileTree();
+});
+
+on(els.projectFileSearch, "input", () => {
+  renderProjectFileTree();
+});
+
+on(els.projectFileTree, "click", (event) => {
+  const folder = event.target.closest("[data-project-folder]");
+  if (folder) {
+    toggleProjectFolder(folder.dataset.projectFolder);
+    return;
+  }
+  const file = event.target.closest("[data-project-file]");
+  if (!file) return;
+  selectProjectFile(file.dataset.projectFile, file.dataset.projectExt);
 });
 
 els.pluginSdk.addEventListener("click", () => {
@@ -225,28 +378,21 @@ els.pluginCommandRun.addEventListener("click", () => {
   runTrustedPluginCommand();
 });
 
-els.toolchainReadiness.addEventListener("click", () => {
-  loadToolchainReadiness();
+els.mcpStart.addEventListener("click", () => {
+  startMcpServer();
 });
 
-els.enginePlan.addEventListener("click", () => {
-  loadEngineLaunchPlan();
+els.mcpStop.addEventListener("click", () => {
+  stopMcpServer();
 });
 
-els.previewWorkspace.addEventListener("click", () => {
-  generatePreviewWorkspace();
-});
-
-els.geometryDiff.addEventListener("click", () => {
-  loadGeometryDiffReport();
-});
-
-els.pixelDiff.addEventListener("click", () => {
-  loadPixelDiffReport();
-});
-
-els.captureRun.addEventListener("click", () => {
-  runEngineCapture();
+els.mcpPort.addEventListener("change", () => {
+  updateMcpEndpoint({
+    running: false,
+    port: Number(els.mcpPort.value || 8765),
+    endpoint: `http://127.0.0.1:${els.mcpPort.value || 8765}/mcp`,
+    logs: [],
+  });
 });
 
 els.layoutDiff.addEventListener("click", () => {
@@ -267,26 +413,6 @@ els.patchDryRun.addEventListener("click", () => {
 
 els.patchApply.addEventListener("click", () => {
   runLayoutPatch(true);
-});
-
-els.buildPlan.addEventListener("click", () => {
-  loadBuildPlan();
-});
-
-els.runBuild.addEventListener("click", () => {
-  runBuildWorkflow();
-});
-
-els.workshopPlan.addEventListener("click", () => {
-  loadWorkshopPublishPlan();
-});
-
-els.workshopRun.addEventListener("click", () => {
-  runWorkshopPublish();
-});
-
-els.generateController.addEventListener("click", () => {
-  loadControllerSkeleton();
 });
 
 els.stringTableForm.addEventListener("submit", (event) => {
@@ -347,14 +473,6 @@ els.imageImportForm.addEventListener("submit", (event) => {
 
 els.packAtlas.addEventListener("click", () => {
   packAtlas();
-});
-
-els.textureConvertPlan.addEventListener("click", () => {
-  convertTexture(false);
-});
-
-els.textureConvertRun.addEventListener("click", () => {
-  convertTexture(true);
 });
 
 els.loadImages.addEventListener("click", () => {
@@ -542,10 +660,361 @@ els.canvas.addEventListener("click", (event) => {
   }
 });
 
-openLayout();
+setWorkspace("editor");
+setDockTab("source");
+initializeRecentProjects();
+initializeEnvironment();
+setInterval(() => {
+  if (state.environmentReady) refreshMcpStatus();
+}, 5000);
+
+function initializeRecentProjects() {
+  state.recentProjects = readStoredRecentProjects();
+  renderRecentProjects();
+}
+
+function readStoredRecentProjects() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(recentProjectsStorageKey) || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return normalizeRecentProjects(parsed);
+  } catch {
+    return [];
+  }
+}
+
+function normalizeRecentProjects(projects) {
+  const seen = new Set();
+  const normalized = [];
+  for (const project of projects) {
+    const value = normalizeProjectRoot(project);
+    if (!value) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push(value);
+    if (normalized.length >= recentProjectsLimit) break;
+  }
+  return normalized;
+}
+
+function rememberProjectRoot(project) {
+  const value = normalizeProjectRoot(project);
+  if (!value) return;
+  const next = normalizeRecentProjects([
+    value,
+    ...state.recentProjects.filter((item) => item.toLowerCase() !== value.toLowerCase()),
+  ]);
+  state.recentProjects = next;
+  writeStoredRecentProjects(next);
+  persistRecentProjects();
+  renderRecentProjects();
+}
+
+function mergeRecentProjects(projects, { persist = false } = {}) {
+  const next = normalizeRecentProjects([
+    ...arrayOfStrings(projects),
+    ...state.recentProjects,
+  ]);
+  const changed = next.join("\n").toLowerCase() !== state.recentProjects.join("\n").toLowerCase();
+  state.recentProjects = next;
+  writeStoredRecentProjects(next);
+  renderRecentProjects();
+  if (persist || changed) persistRecentProjects();
+}
+
+function writeStoredRecentProjects(projects) {
+  try {
+    localStorage.setItem(recentProjectsStorageKey, JSON.stringify(normalizeRecentProjects(projects)));
+  } catch {
+    // Local storage can be unavailable in restricted browser contexts.
+  }
+}
+
+function persistRecentProjects() {
+  if (!state.environmentReady || !state.recentProjects.length) return;
+  fetch("/api/environment/recent-projects", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      recentProjectRoots: state.recentProjects,
+    }),
+  }).catch(() => {
+    // The local dropdown still works when the environment file cannot be written.
+  });
+}
+
+function renderRecentProjects() {
+  const current = normalizeProjectRoot(els.projectRoot?.value) || state.recentProjects[0] || "";
+  renderRecentProjectSelect(els.recentProjectRoot, current);
+  renderRecentProjectSelect(els.recentProjectBrowserRoot, current);
+}
+
+function renderRecentProjectSelect(select, current) {
+  if (!select) return;
+  const options = state.recentProjects.length
+    ? [
+        '<option value="">Recent projects</option>',
+        ...state.recentProjects.map((project) => `<option value="${escapeHtml(project)}">${escapeHtml(project)}</option>`),
+      ]
+    : ['<option value="">No recent projects</option>'];
+  select.innerHTML = options.join("");
+  if (current && state.recentProjects.some((project) => project.toLowerCase() === current.toLowerCase())) {
+    select.value = state.recentProjects.find((project) => project.toLowerCase() === current.toLowerCase()) ?? "";
+  } else {
+    select.value = "";
+  }
+}
+
+async function selectRecentProject(project) {
+  const value = normalizeProjectRoot(project);
+  if (!value) return;
+  setProjectRootInputs(value);
+  rememberProjectRoot(value);
+  setStatus("Project selected");
+  if (!state.environmentReady) return;
+  if (state.workspace === "project") {
+    await loadProjectFiles();
+  } else if (state.data) {
+    await openLayout();
+  }
+}
+
+function setProjectRootInputs(project) {
+  const value = normalizeProjectRoot(project);
+  if (!value) return;
+  if (els.projectRoot) els.projectRoot.value = value;
+  if (els.projectBrowserRoot) els.projectBrowserRoot.value = value;
+  renderRecentProjects();
+}
+
+function normalizeProjectRoot(project) {
+  return String(project ?? "").trim().replace(/[\\/]+$/, "");
+}
+
+function arrayOfStrings(value) {
+  return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
+}
+
+async function initializeEnvironment() {
+  const response = await fetch("/api/environment/status");
+  const payload = await response.json();
+  state.environmentStatus = payload;
+  applyEnvironmentStatus(payload);
+  if (!payload.ready) {
+    setStatus("Environment setup required");
+    renderError("Initialize DayZ IDE environment to continue.");
+    return;
+  }
+  state.environmentReady = true;
+  refreshMcpStatus();
+  openLayout();
+}
+
+function applyEnvironmentStatus(payload) {
+  state.environmentReady = payload.ready === true;
+  els.app.classList.toggle("blocked", !state.environmentReady);
+  els.setupOverlay.hidden = state.environmentReady;
+  els.setupProjectsRoot.value = payload.settings?.projectsRoot || payload.defaults?.projectsRoot || "";
+  if (payload.settings?.recentProjectRoots?.length) {
+    mergeRecentProjects(payload.settings.recentProjectRoots);
+  } else if (state.environmentReady && state.recentProjects.length) {
+    persistRecentProjects();
+  }
+  const lastProject = state.recentProjects[0] || "";
+  const defaultProject = lastProject || payload.settings?.projectsRoot || payload.defaults?.projectsRoot || "";
+  if (!els.projectRoot.value.trim() && defaultProject) {
+    els.projectRoot.value = defaultProject;
+  }
+  if (els.projectBrowserRoot && !els.projectBrowserRoot.value.trim()) {
+    els.projectBrowserRoot.value = els.projectRoot.value.trim() || defaultProject;
+  }
+  renderRecentProjects();
+  renderSetupStatus(payload);
+}
+
+function renderSetupStatus(payload) {
+  const counts = payload.counts ?? {};
+  const pathsValid = payload.checks?.projectsRootExists;
+  const missing = payload.missing?.length
+    ? `<br>Missing: ${escapeHtml(payload.missing.join("; "))}`
+    : "";
+  els.setupStatus.className = `setupStatus ${payload.ready || pathsValid ? "ready" : "error"}`;
+  els.setupStatus.innerHTML = payload.ready || pathsValid
+    ? `Ready. Layouts: ${counts.layouts ?? 0}, styles: ${counts.styles ?? 0}, imagesets: ${counts.imageSets ?? 0}.<br>
+       ${payload.ready ? "Environment is initialized." : "Click Initialize to save this environment for future launches."}`
+    : `Required paths were not validated.${missing}`;
+}
+
+async function saveEnvironmentSetup() {
+  setStatus("Saving environment");
+  const response = await fetch("/api/environment/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      projectsRoot: els.setupProjectsRoot.value.trim(),
+      recentProjectRoots: state.recentProjects,
+    }),
+  });
+  const payload = await response.json();
+  state.environmentStatus = payload;
+  applyEnvironmentStatus(payload);
+  if (!response.ok || !payload.ready) {
+    setStatus("Environment setup failed");
+    return;
+  }
+  setStatus("Environment ready");
+  await refreshMcpStatus();
+  await openLayout();
+}
+
+function setWorkspace(name) {
+  state.workspace = name || "editor";
+  for (const tab of els.workspaceTabs) {
+    tab.classList.toggle("active", tab.dataset.workspaceTarget === state.workspace);
+  }
+  for (const panel of els.workspacePanels) {
+    panel.classList.toggle("active", panel.dataset.workspacePanel === state.workspace);
+  }
+  if (state.workspace === "project" && state.environmentReady && !state.projectFileTree) {
+    loadProjectFiles();
+  }
+}
+
+function setDockTab(name) {
+  state.bottomDockTab = name || "source";
+  for (const tab of els.dockTabs) {
+    const active = tab.dataset.dockTab === state.bottomDockTab;
+    tab.classList.toggle("active", active);
+    tab.setAttribute("aria-selected", active ? "true" : "false");
+  }
+  for (const panel of els.dockPanes) {
+    panel.classList.toggle("active", panel.dataset.dockPanel === state.bottomDockTab);
+  }
+  for (const actions of els.dockActions) {
+    actions.hidden = actions.dataset.dockActions !== state.bottomDockTab;
+  }
+}
+
+function applyPreviewResolution() {
+  const value = els.previewResolution?.value ?? "";
+  if (value === "fit") {
+    state.previewResolutionMode = "fit";
+    syncCanvasViewportMode();
+    setStatus("Fit to window");
+    draw();
+    return;
+  }
+
+  const match = value.match(/^(\d+)x(\d+)$/);
+  if (!match) return;
+  state.previewResolutionMode = "fixed";
+  els.width.value = match[1];
+  els.height.value = match[2];
+  els.viewportBadge.textContent = value;
+  syncCanvasViewportMode();
+  if (!state.environmentReady) return;
+  openLayout();
+}
+
+function syncPreviewResolutionSelect(width, height) {
+  const value = `${Number(width)}x${Number(height)}`;
+  if (!els.previewResolution) return;
+  if (state.previewResolutionMode === "fit") {
+    els.previewResolution.value = "fit";
+    return;
+  }
+  const hasOption = [...els.previewResolution.options].some((option) => option.value === value);
+  els.previewResolution.value = hasOption ? value : "fit";
+}
+
+function syncWorkbenchToolbarState() {
+  els.workbenchGridIcon?.classList.toggle("active", Boolean(state.showGrid));
+  els.workbenchSnapIcon?.classList.toggle("active", Boolean(state.snapToGrid));
+  els.snapMarginButton?.classList.toggle("active", Boolean(state.snapToGrid));
+  if (els.gridSizeButton) els.gridSizeButton.textContent = `Grid Size`;
+  if (els.zoomButton) els.zoomButton.textContent = state.previewResolutionMode === "fit" ? "Zoom: Fit" : "Zoom: 100%";
+  if (state.data?.viewport) {
+    els.viewportBadge.textContent = `${state.data.viewport.width}x${state.data.viewport.height}`;
+    syncPreviewResolutionSelect(state.data.viewport.width, state.data.viewport.height);
+  }
+  syncCanvasViewportMode();
+}
+
+function syncCanvasViewportMode() {
+  const fit = state.previewResolutionMode === "fit" || els.scaledPreview?.classList.contains("active");
+  els.stage?.classList.toggle("fitToWindow", fit);
+  els.canvas?.classList.toggle("fitToWindow", fit);
+  if (els.zoomButton) els.zoomButton.textContent = state.previewResolutionMode === "fit" ? "Zoom: Fit" : "Zoom: 100%";
+}
+
+async function refreshMcpStatus() {
+  const response = await fetch("/api/mcp/status").catch(() => null);
+  if (!response) return;
+  const payload = await response.json().catch(() => null);
+  if (!payload) return;
+  updateMcpEndpoint(payload);
+}
+
+async function startMcpServer() {
+  setStatus("Starting MCP");
+  const response = await fetch("/api/mcp/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      port: Number(els.mcpPort.value || 8765),
+      projectRoot: els.projectRoot.value.trim() || null,
+    }),
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    showPanelDiagnostic("MCP start failed", payload.error || "Unknown error");
+    setStatus("MCP error");
+    return;
+  }
+  updateMcpEndpoint(payload);
+  setWorkspace("mcp");
+  setStatus(payload.running ? "MCP running" : "MCP stopped");
+}
+
+async function stopMcpServer() {
+  setStatus("Stopping MCP");
+  const response = await fetch("/api/mcp/stop", { method: "POST" });
+  const payload = await response.json();
+  if (!response.ok) {
+    showPanelDiagnostic("MCP stop failed", payload.error || "Unknown error");
+    setStatus("MCP error");
+    return;
+  }
+  updateMcpEndpoint(payload);
+  setStatus("MCP stopped");
+}
+
+function updateMcpEndpoint(payload) {
+  const port = payload.port ?? Number(els.mcpPort.value || 8765);
+  const endpoint = payload.endpoint || `http://127.0.0.1:${port}/mcp`;
+  els.mcpPort.value = String(port);
+  els.mcpEndpoint.textContent = endpoint;
+  els.mcpEndpointCopy.textContent = endpoint;
+  els.mcpStatusText.textContent = payload.running
+    ? `Running${payload.pid ? `, PID ${payload.pid}` : ""}`
+    : "Stopped";
+  els.mcpStateDot.classList.toggle("running", payload.running === true);
+  els.mcpStart.disabled = payload.running === true;
+  els.mcpStop.disabled = payload.running !== true;
+  const lines = payload.logs?.length
+    ? payload.logs
+    : [payload.running ? "MCP server is running." : "No MCP process started."];
+  els.mcpLogs.textContent = lines.join("\n");
+}
 
 async function openLayout() {
+  if (!state.environmentReady) {
+    setStatus("Environment setup required");
+    return;
+  }
   setStatus("Loading");
+  resetLayoutConsole();
   const params = new URLSearchParams({
     file: els.layoutPath.value,
     width: els.width.value || "1280",
@@ -553,10 +1022,39 @@ async function openLayout() {
     language: els.previewLanguage.value || "English",
     previewState: previewStateValue(),
   });
-  if (els.projectRoot.value.trim()) params.set("project", els.projectRoot.value.trim());
+  const project = normalizeProjectRoot(els.projectRoot.value);
+  if (project) {
+    setProjectRootInputs(project);
+    rememberProjectRoot(project);
+    params.set("project", project);
+  }
+  pushLayoutLog("info", "layout.open", "Opening layout", Object.fromEntries(params.entries()));
 
-  const response = await fetch(`/api/layout?${params}`);
-  const data = await response.json();
+  let response;
+  let data;
+  try {
+    response = await fetch(`/api/layout?${params}`);
+    data = await response.json();
+  } catch (error) {
+    setStatus("Error");
+    state.data = null;
+    state.source = "";
+    state.sourceHash = null;
+    state.history = [];
+    state.selectedId = null;
+    state.selectedIds = new Set();
+    state.sourceEditing = false;
+    state.sourceDirty = false;
+    pushLayoutLog("error", "layout.api", "GET /api/layout failed", {
+      error: errorMessage(error),
+    });
+    renderError(errorMessage(error));
+    return;
+  }
+  pushLayoutLog(response.ok ? "info" : "error", "layout.api", `GET /api/layout -> ${response.status}`, {
+    status: response.status,
+    statusText: response.statusText,
+  });
   if (!response.ok) {
     setStatus("Error");
     state.data = null;
@@ -567,21 +1065,28 @@ async function openLayout() {
     state.selectedIds = new Set();
     state.sourceEditing = false;
     state.sourceDirty = false;
+    pushLayoutLog("error", "layout.open", data.error || "Unable to open layout.", {
+      file: els.layoutPath.value,
+      project: project || null,
+    });
     renderError(data.error || "Unable to open layout.");
     return;
   }
 
   state.data = data;
+  logLayoutSummary(data);
   state.selectedId = data.nodes[0]?.id ?? null;
   state.selectedIds = new Set(state.selectedId ? [state.selectedId] : []);
   state.sourceEditing = false;
   state.sourceDirty = false;
   els.canvas.width = data.viewport.width;
   els.canvas.height = data.viewport.height;
+  syncCanvasViewportMode();
   els.title.textContent = data.title;
   els.viewportBadge.textContent = `${data.viewport.width}x${data.viewport.height}`;
+  syncPreviewResolutionSelect(data.viewport.width, data.viewport.height);
   setStatus(`${data.nodes.length} widgets`);
-  if (els.projectRoot.value.trim()) {
+  if (project) {
     await loadStringTableGrid({ silent: true });
     await loadStyles({ silent: true });
     await loadFonts({ silent: true });
@@ -597,6 +1102,10 @@ function renderAll() {
   renderImages();
   renderDiagnostics();
   renderSourceControls();
+  renderLayoutConsole();
+  renderLayoutDiagnostics();
+  renderLayoutModel();
+  syncWorkbenchToolbarState();
   draw();
 }
 
@@ -682,19 +1191,15 @@ function renderMultiSelectSummary(nodes) {
 }
 
 function renderStructureControls(node) {
-  const presets = state.widgetPalette.length ? state.widgetPalette : fallbackWidgetPalette();
-  const presetOptions = presets.map((preset) => (
-    `<option value="${escapeHtml(preset.id)}" data-type="${escapeHtml(preset.typeClass)}" data-name="${escapeHtml(preset.defaultName)}">${escapeHtml(preset.category)} / ${escapeHtml(preset.label)}</option>`
-  )).join("");
-  const selectedPreset = presets[0] ?? { typeClass: "FrameWidgetClass", defaultName: `${node.name}Child` };
+  const presets = workbenchWidgetTypePalette();
+  const selectedPreset = presets.find((preset) => preset.typeClass === "FrameWidgetClass") ?? presets[0] ?? { typeClass: "FrameWidgetClass", defaultName: `${node.name}Child` };
   const targetOptions = (state.data?.nodes ?? [])
     .filter((candidate) => candidate.id !== node.id && !isDescendantNode(candidate, node.id))
     .map((candidate) => `<option value="${escapeHtml(candidate.id)}">${escapeHtml(" ".repeat(candidate.depth * 2) + candidate.name)}</option>`)
     .join("");
   return `<div class="structureControls">
-    <div class="structureRow">
-      <select data-create-preset>${presetOptions}</select>
-      <input data-create-type autocomplete="off" spellcheck="false" value="${escapeHtml(selectedPreset.typeClass)}">
+    ${renderWidgetClassTree(presets, selectedPreset)}
+    <div class="structureRow createRow">
       <input data-create-name autocomplete="off" spellcheck="false" value="${escapeHtml(uniqueWidgetName(selectedPreset.defaultName || node.name))}">
       <button type="button" data-create-child>Add Child</button>
     </div>
@@ -706,15 +1211,55 @@ function renderStructureControls(node) {
   </div>`;
 }
 
-els.details.addEventListener("change", (event) => {
-  if (!event.target.matches("[data-create-preset]")) return;
-  const option = event.target.selectedOptions[0];
-  const row = event.target.closest(".structureRow");
-  const typeInput = row?.querySelector("[data-create-type]");
-  const nameInput = row?.querySelector("[data-create-name]");
-  if (typeInput) typeInput.value = option?.dataset.type || "FrameWidgetClass";
-  if (nameInput) nameInput.value = uniqueWidgetName(option?.dataset.name || "Widget");
+els.details.addEventListener("click", (event) => {
+  const option = event.target.closest("[data-widget-type-option]");
+  if (!option) return;
+  selectWidgetTypeOption(option);
 });
+
+function renderWidgetClassTree(presets, selectedPreset) {
+  const byTypeClass = new Map(presets.map((preset) => [preset.typeClass, preset]));
+  const groups = workbenchWidgetGroups().map((group) => ({
+    ...group,
+    presets: group.names.map((name) => byTypeClass.get(`${name}Class`) ?? workbenchPresetFromName(name)),
+  }));
+  return `<div class="widgetTypePicker" role="tree" aria-label="Widget classes">
+    <input data-create-preset type="hidden" value="${escapeHtml(selectedPreset.id || "")}">
+    <input data-create-type type="hidden" value="${escapeHtml(selectedPreset.typeClass)}">
+    ${groups.map((group) => renderWidgetClassGroup(group, selectedPreset)).join("")}
+  </div>`;
+}
+
+function renderWidgetClassGroup(group, selectedPreset) {
+  return `<details class="widgetClassGroup" open>
+    <summary>${escapeHtml(group.label)}</summary>
+    <div class="widgetClassGroupItems">
+      ${group.presets.map((preset) => renderWidgetClassOption(preset, selectedPreset)).join("")}
+    </div>
+  </details>`;
+}
+
+function renderWidgetClassOption(preset, selectedPreset) {
+  const active = preset.typeClass === selectedPreset.typeClass ? " active" : "";
+  return `<button class="widgetClassOption${active}" type="button"
+    data-widget-type-option
+    data-preset-id="${escapeHtml(preset.id)}"
+    data-type="${escapeHtml(preset.typeClass)}"
+    data-name="${escapeHtml(preset.defaultName)}">${escapeHtml(workbenchWidgetTypeName(preset))}</button>`;
+}
+
+function selectWidgetTypeOption(option) {
+  const controls = option.closest(".structureControls");
+  const presetInput = controls?.querySelector("[data-create-preset]");
+  const typeInput = controls?.querySelector("[data-create-type]");
+  const nameInput = controls?.querySelector("[data-create-name]");
+  if (presetInput) presetInput.value = option.dataset.presetId || "";
+  if (typeInput) typeInput.value = option.dataset.type || "FrameWidgetClass";
+  if (nameInput) nameInput.value = uniqueWidgetName(option.dataset.name || "Widget");
+  controls?.querySelectorAll("[data-widget-type-option]").forEach((candidate) => {
+    candidate.classList.toggle("active", candidate === option);
+  });
+}
 
 function isDescendantNode(candidate, parentId) {
   let current = candidate;
@@ -941,17 +1486,16 @@ async function createChildWidget() {
   if (!state.data || !node) return;
   const presetId = els.details.querySelector("[data-create-preset]")?.value || "";
   const typeClass = els.details.querySelector("[data-create-type]")?.value.trim() || "FrameWidgetClass";
-  const name = els.details.querySelector("[data-create-name]")?.value.trim() || uniqueChildName(node.name);
+  const selectedPreset = presetForSelectedWidgetType(presetId, typeClass);
+  const usePreset = shouldUsePresetPayload(selectedPreset?.id);
+  const name = els.details.querySelector("[data-create-name]")?.value.trim()
+    || uniqueWidgetName(selectedPreset?.defaultName || uniqueChildName(node.name));
   await applyWidgetStructure("/api/layout/widget/create", {
     parentWidgetId: node.id,
-    presetId: presetId || null,
+    presetId: usePreset ? selectedPreset.id : null,
     typeClass,
     name,
-    props: presetId ? undefined : {
-      position: [0, 0],
-      size: typeClass.toLowerCase().includes("text") ? [0.2, 0.05] : [0.1, 0.1],
-      ...(typeClass.toLowerCase().includes("text") ? { text: "New text" } : {}),
-    },
+    props: usePreset ? undefined : defaultWidgetPropsForType(typeClass),
   }, (payload) => payload.preview.nodes.find((candidate) => candidate.name === payload.widget?.name)?.id ?? node.id);
 }
 
@@ -969,11 +1513,116 @@ async function loadWidgetPalette(options = {}) {
 }
 
 function fallbackWidgetPalette() {
+  return workbenchWidgetGroups().flatMap((group) => group.names).map(workbenchPresetFromName);
+}
+
+function workbenchPresetFromName(name) {
+  return {
+    id: `workbench.${name.toLowerCase()}`,
+    category: "Workbench",
+    label: name,
+    typeClass: `${name}Class`,
+    defaultName: name,
+  };
+}
+
+function workbenchWidgetGroups() {
   return [
-    { id: "container.frame", category: "Container", label: "Frame", typeClass: "FrameWidgetClass", defaultName: "Frame" },
-    { id: "text.label", category: "Text", label: "Label", typeClass: "TextWidgetClass", defaultName: "Label" },
-    { id: "image.icon", category: "Image", label: "Icon Image", typeClass: "ImageWidgetClass", defaultName: "Icon" },
+    {
+      id: "basic",
+      label: "Basic",
+      names: [
+        "ButtonWidget",
+        "CheckBoxWidget",
+        "ContentWidget",
+        "EditBoxWidget",
+        "EmbededWidget",
+        "FrameWidget",
+        "ImageWidget",
+        "MultilineEditBoxWidget",
+        "MultilineTextWidget",
+        "PanelWidget",
+        "PasswordEditBoxWidget",
+        "ProgressBarWidget",
+        "RichTextWidget",
+        "SimpleProgressBarWidget",
+        "SliderWidget",
+        "TextListboxWidget",
+        "TextWidget",
+        "WindowWidget",
+        "XComboBoxWidget",
+      ],
+    },
+    {
+      id: "game",
+      label: "Game",
+      names: [
+        "HtmlWidget",
+        "ItemPreviewWidget",
+        "MapWidget",
+        "PlayerPreviewWidget",
+        "ServerBrowserWidget",
+        "SmartPanelWidget",
+        "ThreeStateCheckboxWidget",
+      ],
+    },
+    {
+      id: "helpers",
+      label: "Helpers",
+      names: [
+        "GridSpacerWidget",
+        "ScrollWidget",
+        "WrapSpacerWidget",
+      ],
+    },
+    {
+      id: "special",
+      label: "Special",
+      names: [
+        "CanvasWidget",
+        "GenericListboxWidget",
+        "RenderTargetWidget",
+        "RTTextureWidget",
+        "UniversalListboxWidget",
+        "VideoWidget",
+      ],
+    },
   ];
+}
+
+function workbenchWidgetTypePalette() {
+  const editorTypes = state.widgetPalette.filter((preset) => String(preset.id || "").startsWith("editor."));
+  return fallbackWidgetPalette().map((fallback) => (
+    editorTypes.find((preset) => preset.typeClass === fallback.typeClass) ?? fallback
+  ));
+}
+
+function workbenchWidgetTypeName(preset) {
+  return String(preset.defaultName || preset.typeClass || preset.label || "Widget").replace(/Class$/, "");
+}
+
+function presetForSelectedWidgetType(presetId, typeClass) {
+  const presets = workbenchWidgetTypePalette();
+  return presets.find((preset) => preset.id === presetId)
+    ?? presets.find((preset) => preset.typeClass === typeClass)
+    ?? null;
+}
+
+function defaultWidgetPropsForType(typeClass) {
+  const lowerType = String(typeClass).toLowerCase();
+  return {
+    position: [0, 0],
+    size: lowerType.includes("text") ? [0.2, 0.05] : [0.1, 0.1],
+    ...(lowerType.includes("text") ? { text: "New text" } : {}),
+  };
+}
+
+function isWorkbenchWidgetPreset(presetId) {
+  return String(presetId || "").startsWith("workbench.");
+}
+
+function shouldUsePresetPayload(presetId) {
+  return Boolean(presetId) && !isWorkbenchWidgetPreset(presetId);
 }
 
 async function deleteSelectedWidget() {
@@ -1044,11 +1693,11 @@ function parsePropertyValues(key, rawValue) {
 function renderTypedProperties(node) {
   const properties = node.typedProperties ?? [];
   if (!properties.length) {
-    els.typedProperties.innerHTML = '<p class="empty">No typed properties.</p>';
+    els.typedProperties.innerHTML = `${renderGeometryInspector(node)}<p class="empty">No typed properties.</p>`;
     return;
   }
 
-  els.typedProperties.innerHTML = renderTypedPropertyList(properties);
+  els.typedProperties.innerHTML = `${renderGeometryInspector(node)}${renderTypedPropertyList(properties)}`;
 }
 
 function renderBatchTypedProperties(nodes) {
@@ -1058,6 +1707,88 @@ function renderBatchTypedProperties(nodes) {
     return;
   }
   els.typedProperties.innerHTML = `<div class="typedBatchIntro">${nodes.length} selected widgets</div>${renderTypedPropertyList(properties)}`;
+}
+
+function renderGeometryInspector(node) {
+  const geometry = geometryStateFromNode(node);
+  const anchors = [
+    ["left", "top"], ["center", "top"], ["right", "top"],
+    ["left", "center"], ["center", "center"], ["right", "center"],
+    ["left", "bottom"], ["center", "bottom"], ["right", "bottom"],
+  ].map(([horizontal, vertical]) => {
+    const active = geometry.halign === horizontal && geometry.valign === vertical ? " active" : "";
+    return `<button type="button" class="anchorCell${active}" data-geometry-anchor="${horizontal}:${vertical}" title="${horizontal} ${vertical}"></button>`;
+  }).join("");
+  return `<div class="geometryInspector" data-geometry>
+    <div class="typedCategory">Geometry</div>
+    <div class="geometryHeader">
+      <strong>${escapeHtml(node.name)}</strong>
+      <code>${escapeHtml(node.typeClass)}</code>
+    </div>
+    <div class="geometryFields">
+      ${renderGeometryField("X", "x", geometry.x.value, geometry.x.unit)}
+      ${renderGeometryField("Y", "y", geometry.y.value, geometry.y.unit)}
+      ${renderGeometryField("W", "w", geometry.w.value, geometry.w.unit)}
+      ${renderGeometryField("H", "h", geometry.h.value, geometry.h.unit)}
+    </div>
+    <div class="geometryModes">
+      <label><span>H anchor</span><select data-geometry-align="halign">
+        ${["left", "center", "right"].map((value) => `<option value="${value}"${value === geometry.halign ? " selected" : ""}>${value}</option>`).join("")}
+      </select></label>
+      <label><span>V anchor</span><select data-geometry-align="valign">
+        ${["top", "center", "bottom"].map((value) => `<option value="${value}"${value === geometry.valign ? " selected" : ""}>${value}</option>`).join("")}
+      </select></label>
+    </div>
+    <div class="anchorGrid" aria-label="Anchor presets">${anchors}</div>
+    <button type="button" class="typedSave" data-save-geometry>Save Geometry</button>
+  </div>`;
+}
+
+function renderGeometryField(label, key, value, unit) {
+  return `<label class="geometryField">
+    <span>${label}</span>
+    <input type="number" step="any" data-geometry-value="${key}" value="${escapeHtml(value)}">
+    <select data-geometry-unit="${key}">
+      <option value="percent"${unit === "percent" ? " selected" : ""}>%</option>
+      <option value="px"${unit === "px" ? " selected" : ""}>px</option>
+    </select>
+  </label>`;
+}
+
+function geometryStateFromNode(node) {
+  const props = node.props ?? {};
+  const position = numericPair(props.position, [0, 0]);
+  const size = numericPair(props.size, [1, 1]);
+  const exact = node.box?.exact ?? {};
+  return {
+    x: geometryValue(position[0], exact.positionX),
+    y: geometryValue(position[1], exact.positionY),
+    w: geometryValue(size[0], exact.sizeX),
+    h: geometryValue(size[1], exact.sizeY),
+    halign: node.box?.align?.horizontal ?? String(props.halign?.[0] ?? "left"),
+    valign: node.box?.align?.vertical ?? String(props.valign?.[0] ?? "top"),
+  };
+}
+
+function numericPair(values, fallback) {
+  if (!Array.isArray(values) || values.length < 2) return fallback;
+  return [
+    Number.isFinite(Number(values[0])) ? Number(values[0]) : fallback[0],
+    Number.isFinite(Number(values[1])) ? Number(values[1]) : fallback[1],
+  ];
+}
+
+function geometryValue(raw, exact) {
+  return {
+    unit: exact ? "px" : "percent",
+    value: exact ? formatGeometryNumber(raw) : formatGeometryNumber(raw * 100),
+  };
+}
+
+function formatGeometryNumber(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Number(number.toFixed(4));
 }
 
 function renderTypedPropertyList(properties) {
@@ -1086,6 +1817,55 @@ function renderTypedProperty(property) {
     ${renderTypedControl(property, values)}
     <button type="button" class="typedSave" data-save-property>${actionLabel}</button>
   </div>`;
+}
+
+function selectGeometryAnchor(value) {
+  const [halign, valign] = String(value || "").split(":");
+  const root = els.typedProperties.querySelector("[data-geometry]");
+  if (!root || !halign || !valign) return;
+  root.querySelector('[data-geometry-align="halign"]').value = halign;
+  root.querySelector('[data-geometry-align="valign"]').value = valign;
+  for (const button of root.querySelectorAll("[data-geometry-anchor]")) {
+    button.classList.toggle("active", button.dataset.geometryAnchor === value);
+  }
+}
+
+async function saveGeometryInspector() {
+  const node = selectedNode();
+  const root = els.typedProperties.querySelector("[data-geometry]");
+  if (!state.data || !node || !root) return;
+
+  const field = (key) => ({
+    value: Number(root.querySelector(`[data-geometry-value="${key}"]`)?.value ?? 0),
+    unit: root.querySelector(`[data-geometry-unit="${key}"]`)?.value ?? "percent",
+  });
+  const x = field("x");
+  const y = field("y");
+  const w = field("w");
+  const h = field("h");
+  const halign = root.querySelector('[data-geometry-align="halign"]')?.value ?? "left";
+  const valign = root.querySelector('[data-geometry-align="valign"]')?.value ?? "top";
+  const position = [
+    formatLayoutNumber(x.unit === "px" ? x.value : x.value / 100),
+    formatLayoutNumber(y.unit === "px" ? y.value : y.value / 100),
+  ];
+  const size = [
+    formatLayoutNumber(w.unit === "px" ? w.value : w.value / 100),
+    formatLayoutNumber(h.unit === "px" ? h.value : h.value / 100),
+  ];
+
+  await saveWidgetBox(node, {
+    position,
+    size,
+    props: {
+      hexactpos: x.unit === "px" ? 1 : 0,
+      vexactpos: y.unit === "px" ? 1 : 0,
+      hexactsize: w.unit === "px" ? 1 : 0,
+      vexactsize: h.unit === "px" ? 1 : 0,
+      halign,
+      valign,
+    },
+  });
 }
 
 function buildBatchTypedProperties(nodes) {
@@ -1264,7 +2044,11 @@ function renderImages() {
   }
 
   els.images.innerHTML = images.map((image) => {
-    const stateText = image.url ? "browser image" : image.cacheKey ? "decode cache pending" : image.mode;
+    const stateText = image.url
+      ? "browser image"
+      : image.nativeTexture
+        ? `native ${image.nativeTexture.format || image.nativeTexture.ext || "texture"}`
+        : image.mode;
     return `<div class="imageItem">
       <strong>image${image.slot}</strong><br>
       ${escapeHtml(image.ref)}<br>
@@ -1346,6 +2130,279 @@ function renderDiagnostics() {
   }).join("");
 }
 
+function renderLayoutConsole() {
+  if (!els.layoutConsole) return;
+  if (els.layoutConsoleBadge) {
+    els.layoutConsoleBadge.textContent = state.layoutConsole.length > 99 ? "99+" : String(state.layoutConsole.length);
+  }
+  if (!state.layoutConsole.length) {
+    els.layoutConsole.innerHTML = '<p class="empty">No layout console entries.</p>';
+    return;
+  }
+
+  els.layoutConsole.innerHTML = state.layoutConsole.map((entry) => {
+    const details = hasLogDetails(entry.details)
+      ? `<details><summary>details</summary><pre>${escapeHtml(stableJson(entry.details))}</pre></details>`
+      : "";
+    return `<div class="consoleLine ${escapeHtml(entry.level)}">
+      <span class="consoleTime">${escapeHtml(formatLogTime(entry.at))}</span>
+      <span class="consoleLevel">${escapeHtml(entry.level)}</span>
+      <span class="consoleScope">${escapeHtml(entry.scope)}</span>
+      <span class="consoleMessage">${escapeHtml(entry.message)}</span>
+      ${details}
+    </div>`;
+  }).join("");
+  els.layoutConsole.scrollTop = els.layoutConsole.scrollHeight;
+}
+
+function renderLayoutDiagnostics() {
+  if (!els.layoutDiagnostics) return;
+  if (!state.data) {
+    els.layoutDiagnostics.innerHTML = '<p class="empty">No layout loaded.</p>';
+    return;
+  }
+
+  const diagnostics = state.data.diagnostics ?? [];
+  if (!diagnostics.length) {
+    els.layoutDiagnostics.innerHTML = '<p class="empty">No diagnostics.</p>';
+    return;
+  }
+
+  els.layoutDiagnostics.innerHTML = diagnostics.map((diagnostic) => {
+    const kind = diagnostic.code || diagnostic.type || "diagnostic";
+    const severity = diagnostic.severity || (kind.includes("unresolved") || kind.includes("missing") ? "warning" : "info");
+    const details = {
+      filePath: diagnostic.filePath ?? state.data.filePath ?? null,
+      line: diagnostic.line ?? null,
+      column: diagnostic.column ?? null,
+      widget: diagnostic.widget ?? diagnostic.context?.widget ?? null,
+      mode: diagnostic.mode ?? diagnostic.context?.mode ?? null,
+      ref: diagnostic.ref ?? diagnostic.context?.ref ?? null,
+      context: diagnostic.context ?? null,
+    };
+    return `<div class="diag ${diagnosticClass(severity)}">
+      <strong>${escapeHtml(kind)}</strong>
+      <span>${escapeHtml(severity)}</span><br>
+      ${escapeHtml(diagnostic.message || diagnostic.ref || "")}
+      <pre>${escapeHtml(stableJson(compactObject(details)))}</pre>
+    </div>`;
+  }).join("");
+}
+
+function renderLayoutModel() {
+  if (!els.layoutModel) return;
+  if (!state.data) {
+    els.layoutModel.textContent = "No layout loaded.";
+    return;
+  }
+
+  els.layoutModel.textContent = stableJson(layoutModelSummary(state.data));
+}
+
+function pushLayoutLog(level, scope, message, details = null) {
+  state.layoutConsoleSeq += 1;
+  state.layoutConsole.push({
+    id: state.layoutConsoleSeq,
+    at: new Date(),
+    level,
+    scope,
+    message,
+    details: details ? compactObject(details) : null,
+  });
+  if (state.layoutConsole.length > 500) state.layoutConsole.splice(0, state.layoutConsole.length - 500);
+  renderLayoutConsole();
+}
+
+function pushLayoutLogOnce(key, level, scope, message, details = null) {
+  if (state.layoutConsoleSeen.has(key)) return;
+  state.layoutConsoleSeen.add(key);
+  pushLayoutLog(level, scope, message, details);
+}
+
+function resetLayoutConsole() {
+  state.layoutConsole = [];
+  state.layoutConsoleSeq = 0;
+  state.layoutConsoleSeen = new Set();
+  renderLayoutConsole();
+}
+
+function logLayoutSummary(data) {
+  const imageSlots = collectImageSlots(data);
+  const nativeTextures = imageSlots.filter(({ image }) => image.nativeTexture);
+  const browserImages = imageSlots.filter(({ image }) => image.url);
+  const unresolved = imageSlots.filter(({ image }) => !image.ok);
+  pushLayoutLog("info", "layout.model", "Layout model built", {
+    filePath: data.filePath,
+    title: data.title,
+    viewport: data.viewport,
+    previewState: data.previewState,
+    widgets: data.nodes.length,
+    diagnostics: data.diagnostics?.length ?? 0,
+    imageSlots: imageSlots.length,
+    browserImages: browserImages.length,
+    nativeTextures: nativeTextures.length,
+    unresolvedImages: unresolved.length,
+  });
+
+  for (const diagnostic of data.diagnostics ?? []) {
+    const kind = diagnostic.code || diagnostic.type || "diagnostic";
+    pushLayoutLogOnce(
+      `diagnostic:${kind}:${diagnostic.line ?? ""}:${diagnostic.message || diagnostic.ref || ""}`,
+      diagnosticLevel(diagnostic),
+      "diagnostic",
+      diagnostic.message || diagnostic.ref || kind,
+      {
+        code: kind,
+        line: diagnostic.line ?? null,
+        widget: diagnostic.widget ?? diagnostic.context?.widget ?? null,
+        ref: diagnostic.ref ?? diagnostic.context?.ref ?? null,
+        mode: diagnostic.mode ?? diagnostic.context?.mode ?? null,
+      },
+    );
+  }
+
+  for (const { node, image } of nativeTextures) {
+    pushLayoutLogOnce(
+      `native-texture:${image.nativeTexture?.filePath || image.nativeTexture?.url || image.ref}:${image.slot}`,
+      "warn",
+      "image.native",
+      "Native texture queued for browser decode",
+      imageLogDetails(image, node),
+    );
+  }
+}
+
+function logImageLoadFailure(kind, image, error, node = null) {
+  const details = {
+    ...imageLogDetails(image, node),
+    loader: kind,
+    error: errorMessage(error),
+  };
+  const key = `image-failed:${kind}:${details.url || details.filePath || image.ref}:${image.slot}:${details.error}`;
+  pushLayoutLogOnce(
+    key,
+    kind === "native" ? "warn" : "error",
+    "image.load",
+    `${kind} image failed: ${image.ref}`,
+    details,
+  );
+}
+
+function logImageLoadSuccess(kind, image, bitmap, node = null) {
+  const details = {
+    ...imageLogDetails(image, node),
+    loader: kind,
+    width: bitmap?.width ?? bitmap?.source?.width ?? null,
+    height: bitmap?.height ?? bitmap?.source?.height ?? null,
+    format: bitmap?.format ?? null,
+  };
+  const key = `image-loaded:${kind}:${details.url || details.filePath || image.ref}:${image.slot}`;
+  pushLayoutLogOnce(key, "info", "image.load", `${kind} image loaded: ${image.ref}`, details);
+}
+
+function collectImageSlots(data) {
+  return (data?.nodes ?? []).flatMap((node) => (node.images ?? []).map((image) => ({ node, image })));
+}
+
+function layoutModelSummary(data) {
+  const imageSlots = collectImageSlots(data);
+  return {
+    title: data.title,
+    filePath: data.filePath,
+    viewport: data.viewport,
+    previewState: data.previewState,
+    selectedId: state.selectedId,
+    widgets: data.nodes.length,
+    roots: data.nodes.filter((node) => node.depth === 0).map((node) => ({
+      id: node.id,
+      name: node.name,
+      typeClass: node.typeClass,
+      line: node.source?.line ?? null,
+      box: node.box,
+    })),
+    diagnostics: (data.diagnostics ?? []).length,
+    images: {
+      total: imageSlots.length,
+      browser: imageSlots.filter(({ image }) => image.url).length,
+      native: imageSlots.filter(({ image }) => image.nativeTexture).length,
+      unresolved: imageSlots.filter(({ image }) => !image.ok).length,
+      slots: imageSlots.map(({ node, image }) => ({
+        widget: node.name,
+        widgetType: node.typeClass,
+        line: image.line ?? node.source?.line ?? null,
+        slot: image.slot,
+        ref: image.ref,
+        ok: image.ok,
+        mode: image.mode,
+        filePath: image.filePath ?? image.nativeTexture?.filePath ?? null,
+        virtualPath: image.virtualPath ?? null,
+        url: image.url ?? image.nativeTexture?.url ?? null,
+        nativeFormat: image.nativeTexture?.format ?? image.nativeTexture?.ext ?? null,
+        crop: image.crop ?? null,
+      })),
+    },
+  };
+}
+
+function imageLogDetails(image, node = null) {
+  return compactObject({
+    widget: node?.name ?? null,
+    widgetType: node?.typeClass ?? null,
+    widgetLine: node?.source?.line ?? null,
+    slot: image.slot,
+    ref: image.ref,
+    imageLine: image.line ?? null,
+    ok: image.ok,
+    mode: image.mode,
+    filePath: image.filePath ?? image.nativeTexture?.filePath ?? null,
+    virtualPath: image.virtualPath ?? null,
+    url: image.url ?? image.nativeTexture?.url ?? null,
+    nativeFormat: image.nativeTexture?.format ?? image.nativeTexture?.ext ?? null,
+    crop: image.crop ?? null,
+  });
+}
+
+function diagnosticLevel(diagnostic) {
+  const severity = String(diagnostic.severity || "").toLowerCase();
+  if (severity === "error") return "error";
+  if (severity === "warning" || severity === "warn") return "warn";
+  const kind = String(diagnostic.code || diagnostic.type || "").toLowerCase();
+  return kind.includes("unresolved") || kind.includes("missing") ? "warn" : "info";
+}
+
+function diagnosticClass(severity) {
+  const value = String(severity || "").toLowerCase();
+  if (value === "error") return "error";
+  if (value === "warning" || value === "warn") return "warn";
+  return "";
+}
+
+function hasLogDetails(details) {
+  return Boolean(details && typeof details === "object" && Object.keys(details).length > 0);
+}
+
+function compactObject(value) {
+  if (Array.isArray(value)) return value.map(compactObject).filter((item) => item !== undefined);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(Object.entries(value)
+    .map(([key, item]) => [key, compactObject(item)])
+    .filter(([, item]) => item !== undefined && item !== null && item !== ""));
+}
+
+function stableJson(value) {
+  return JSON.stringify(value, null, 2);
+}
+
+function formatLogTime(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  const pad = (number, length = 2) => String(number).padStart(length, "0");
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`;
+}
+
+function errorMessage(error) {
+  return error instanceof Error ? error.message : String(error || "Unknown error");
+}
+
 async function refreshSourceState() {
   if (!state.data?.filePath) {
     state.source = "";
@@ -1367,6 +2424,11 @@ async function refreshSourceState() {
   const historyPayload = await historyResponse.json();
   if (!sourceResponse.ok || !historyResponse.ok) {
     showPanelDiagnostic("source sync failed", sourcePayload.error || historyPayload.error || "Unknown error");
+    pushLayoutLog("error", "source.sync", "Source sync failed", {
+      sourceStatus: sourceResponse.status,
+      historyStatus: historyResponse.status,
+      error: sourcePayload.error || historyPayload.error || "Unknown error",
+    });
     return;
   }
 
@@ -1375,6 +2437,12 @@ async function refreshSourceState() {
   state.history = historyPayload.entries ?? [];
   state.sourceEditing = false;
   state.sourceDirty = false;
+  pushLayoutLog("info", "source.sync", "Layout source loaded", {
+    filePath: sourcePayload.filePath,
+    hash: sourcePayload.hash,
+    bytes: new Blob([sourcePayload.source || ""]).size,
+    historyEntries: state.history.length,
+  });
   renderSourceControls();
 }
 
@@ -1495,6 +2563,10 @@ async function applySourceEdits() {
   if (!response.ok) {
     const diagnostics = payload.diagnostics ? renderDiagnosticList(payload.diagnostics) : "";
     els.diagnostics.innerHTML = `<div class="diag error"><strong>source apply failed</strong><br>${escapeHtml(payload.error || "Unknown error")}</div>${diagnostics}`;
+    pushLayoutLog("error", "source.apply", "Source apply failed", {
+      error: payload.error || "Unknown error",
+      diagnostics: payload.diagnostics ?? null,
+    });
     setStatus("Source apply failed");
     return;
   }
@@ -1507,6 +2579,10 @@ async function applySourceEdits() {
   state.sourceDirty = false;
   syncSelectionAfterPreview(state.selectedId);
   await refreshSourceState();
+  pushLayoutLog("info", "source.apply", "Source applied", {
+    hash: payload.hash,
+    historyPath: payload.transaction?.historyPath ?? null,
+  });
   setStatus("Source applied");
   renderAll();
 }
@@ -1535,6 +2611,106 @@ async function loadProjectValidation() {
     ${payload.layoutCount} layouts, ${payload.diagnosticCount} diagnostics
   </div>${renderDiagnosticList(diagnostics)}`;
   setStatus(`Project diagnostics: ${payload.diagnosticCount}`);
+}
+
+async function loadProjectFiles() {
+  const project = normalizeProjectRoot(els.projectBrowserRoot?.value || els.projectRoot.value);
+  if (!project) {
+    renderProjectFileTree("Project folder is required.");
+    return;
+  }
+  setProjectRootInputs(project);
+  rememberProjectRoot(project);
+
+  setStatus("Scanning project");
+  const response = await fetch(`/api/project/files?project=${encodeURIComponent(project)}`);
+  const payload = await response.json();
+  if (!response.ok) {
+    state.projectFileTree = null;
+    renderProjectFileTree(payload.error || "Unable to scan project files.");
+    showPanelDiagnostic("project files", payload.error || "Unknown error");
+    setStatus("Project scan failed");
+    return;
+  }
+
+  state.projectFileTree = payload.tree ?? null;
+  state.projectTreeOpen = new Set([""]);
+  renderProjectFileTree(payload.truncated
+    ? `Showing first ${payload.total} files. Some files are hidden by the scan limit.`
+    : `${payload.directoryCount} folders, ${payload.fileCount} files, ${payload.layoutCount} layouts.`);
+  setStatus(`Project files ${payload.fileCount}`);
+}
+
+async function selectProjectFile(filePath, ext) {
+  if (!filePath) return;
+  if (String(ext).toLowerCase() !== ".layout") {
+    setStatus("Only .layout files open in the editor");
+    return;
+  }
+  els.layoutPath.value = filePath;
+  await openLayout();
+}
+
+function toggleProjectFolder(relativePath) {
+  if (state.projectTreeOpen.has(relativePath)) {
+    state.projectTreeOpen.delete(relativePath);
+  } else {
+    state.projectTreeOpen.add(relativePath);
+  }
+  renderProjectFileTree();
+}
+
+function renderProjectFileTree(message) {
+  if (message && els.projectFileCount) els.projectFileCount.textContent = message;
+  if (!els.projectFileTree) return;
+  const tree = state.projectFileTree;
+  if (!tree) {
+    els.projectFileTree.innerHTML = '<p class="empty">No project opened.</p>';
+    return;
+  }
+  const query = els.projectFileSearch?.value.trim().toLowerCase() || "";
+  const html = renderProjectTreeNode(tree, 0, query);
+  els.projectFileTree.innerHTML = html || '<p class="empty">No matching files.</p>';
+}
+
+function renderProjectTreeNode(node, depth, query) {
+  if (!projectNodeMatches(node, query)) return "";
+  if (node.type === "directory") {
+    const relativePath = node.relativePath || "";
+    const isOpen = query || state.projectTreeOpen.has(relativePath);
+    const children = isOpen
+      ? (node.children ?? []).map((child) => renderProjectTreeNode(child, depth + 1, query)).join("")
+      : "";
+    const label = relativePath ? node.name : node.name || "Project";
+    return `<div class="fileTreeRow folder ${isOpen ? "open" : ""}" style="--depth:${depth}" data-project-folder="${escapeHtml(relativePath)}">
+      <span class="fileTwisty">${isOpen ? "v" : ">"}</span>
+      <span class="fileIcon">[]</span>
+      <span class="fileName">${escapeHtml(label)}</span>
+    </div>${children}`;
+  }
+
+  const ext = node.ext || "";
+  const isLayout = ext.toLowerCase() === ".layout";
+  return `<div class="fileTreeRow file ${isLayout ? "openable" : ""}" style="--depth:${depth}" data-project-file="${escapeHtml(node.filePath)}" data-project-ext="${escapeHtml(ext)}">
+    <span class="fileTwisty"></span>
+    <span class="fileIcon">${isLayout ? "L" : "."}</span>
+    <span class="fileName">${escapeHtml(node.name)}</span>
+    <span class="fileMeta">${escapeHtml(formatProjectFileMeta(node))}</span>
+  </div>`;
+}
+
+function projectNodeMatches(node, query) {
+  if (!query) return true;
+  const ownMatch = (node.relativePath || node.name || "").toLowerCase().includes(query);
+  if (ownMatch) return true;
+  return node.type === "directory" && (node.children ?? []).some((child) => projectNodeMatches(child, query));
+}
+
+function formatProjectFileMeta(file) {
+  const size = Number(file.size ?? 0);
+  if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  if (size >= 1024) return `${(size / 1024).toFixed(size >= 1024 * 100 ? 0 : 1)} KB`;
+  return `${size} B`;
 }
 
 async function loadPluginSdkReport() {
@@ -1723,84 +2899,14 @@ function renderPluginTrustResult(title, payload) {
   </div>${renderDiagnosticList(payload.diagnostics ?? verification.diagnostics ?? [])}`;
 }
 
-async function loadToolchainReadiness() {
-  setStatus("Checking readiness");
-  const project = els.projectRoot.value.trim();
-  const layout = state.data?.filePath || els.layoutPath.value.trim();
-  const params = new URLSearchParams({
-    allowDiagnostics: "true",
-  });
-  if (project) params.set("project", project);
-  if (layout) params.set("layout", layout);
-  appendBuildProfileParams(params);
-  appendWorkshopPublishParams(params);
-  const texture = els.textureSource.value.trim() || resolveProjectOutputPath(els.imageAssetPath.value.trim());
-  if (texture) params.set("texture", texture);
-  if (els.textureOutput.value.trim()) params.set("textureOut", els.textureOutput.value.trim());
-  if (els.textureFormat.value) params.set("textureFormat", els.textureFormat.value);
-  if (els.expectedScreenshotPath.value.trim()) params.set("expected", els.expectedScreenshotPath.value.trim());
-  if (els.actualScreenshotPath.value.trim()) params.set("actual", els.actualScreenshotPath.value.trim());
-  if (els.engineDumpPath.value.trim()) params.set("geometry", els.engineDumpPath.value.trim());
-  if (els.pixelDiffPath.value.trim()) params.set("pixelDiff", els.pixelDiffPath.value.trim());
-
-  const response = await fetch(`/api/toolchain/readiness?${params}`);
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("readiness failed", payload.error || "Unknown error");
-    setStatus("Readiness failed");
-    return;
-  }
-
-  const counts = countReadinessStatuses(payload.checks ?? []);
-  const importantChecks = (payload.checks ?? [])
-    .filter((check) => ["missing", "blocked", "warning"].includes(check.status))
-    .slice(0, 14);
-  const nextActions = (payload.nextActions ?? []).slice(0, 8);
-  const checkRows = importantChecks.length
-    ? importantChecks.map(renderReadinessCheck).join("")
-    : '<div class="readinessCheck ready"><strong>all scored checks</strong><br>ready</div>';
-  const actionRows = nextActions.map((action) => (
-    `<div class="readinessAction">
-      <strong>${escapeHtml(action.label)}</strong><br>
-      ${escapeHtml(action.message)}
-    </div>`
-  )).join("");
-  els.diagnostics.innerHTML = `<div class="diag ${payload.ready ? "" : "warn"} readinessSummary">
-    <strong>toolchain readiness</strong><br>
-    ${payload.percent}% ready<br>
-    ready: ${counts.ready}, warnings: ${counts.warning}, missing: ${counts.missing}, blocked: ${counts.blocked}<br>
-    score: ${Math.round(payload.score?.earned ?? 0)} / ${Math.round(payload.score?.total ?? 0)}
-  </div>
-  <div class="readinessChecks">${checkRows}</div>
-  ${actionRows ? `<div class="readinessActions">${actionRows}</div>` : ""}`;
-  setStatus(`Readiness ${payload.percent}%`);
-}
-
-function countReadinessStatuses(checks) {
-  return checks.reduce((counts, check) => {
-    counts[check.status] = (counts[check.status] ?? 0) + 1;
-    return counts;
-  }, { ready: 0, warning: 0, missing: 0, blocked: 0, skipped: 0 });
-}
-
-function renderReadinessCheck(check) {
-  const css = check.status === "blocked" || check.status === "missing"
-    ? "error"
-    : check.status === "warning" || check.status === "skipped" ? "warn" : "ready";
-  const pathText = check.path ? `<br><code>${escapeHtml(check.path)}</code>` : "";
-  const requiredFor = check.requiredFor?.length ? `<br><small>${escapeHtml(check.requiredFor.join(", "))}</small>` : "";
-  return `<div class="readinessCheck ${css}">
-    <strong>${escapeHtml(check.label)}</strong> <span>${escapeHtml(check.status)}</span><br>
-    ${escapeHtml(check.message)}${pathText}${requiredFor}
-  </div>`;
-}
-
 async function loadProjectSettings() {
-  const project = els.projectRoot.value.trim();
+  const project = normalizeProjectRoot(els.projectRoot.value);
   if (!project) {
     showPanelDiagnostic("project settings", "Project root is required.");
     return;
   }
+  setProjectRootInputs(project);
+  rememberProjectRoot(project);
   setStatus("Loading settings");
   const response = await fetch(`/api/project/settings?project=${encodeURIComponent(project)}`);
   const payload = await response.json();
@@ -1814,18 +2920,12 @@ async function loadProjectSettings() {
   if (settings.layoutPath) els.layoutPath.value = settings.layoutPath;
   if (settings.preview?.width) els.width.value = settings.preview.width;
   if (settings.preview?.height) els.height.value = settings.preview.height;
+  if (settings.preview?.width && settings.preview?.height) {
+    state.previewResolutionMode = "fixed";
+    syncPreviewResolutionSelect(settings.preview.width, settings.preview.height);
+  }
   if (settings.preview?.language) ensureLanguageOption(settings.preview.language);
   if (settings.preview?.state) els.previewState.value = settings.preview.state;
-  els.addonSource.value = settings.build?.addonSource || "";
-  els.buildOutput.value = settings.build?.outputRoot || "";
-  els.buildPrefix.value = settings.build?.prefix || "";
-  els.toolsRoot.value = settings.build?.toolsRoot || "";
-  els.workshopItemId.value = settings.workshop?.itemId || "";
-  els.workshopTitle.value = settings.workshop?.title || "";
-  els.workshopChangeNote.value = settings.workshop?.changeNote || "";
-  els.workshopContentRoot.value = settings.workshop?.contentRoot || "";
-  els.workshopPreviewImage.value = settings.workshop?.previewImage || "";
-  els.workshopCommandJson.value = settings.workshop?.commandJson || "";
   els.diagnostics.innerHTML = `<div class="diag ${payload.exists ? "" : "warn"}">
     <strong>project settings</strong><br>
     ${payload.exists ? "loaded" : "using defaults"}<br>
@@ -1836,11 +2936,13 @@ async function loadProjectSettings() {
 }
 
 async function saveProjectSettings() {
-  const project = els.projectRoot.value.trim();
+  const project = normalizeProjectRoot(els.projectRoot.value);
   if (!project) {
     showPanelDiagnostic("project settings", "Project root is required.");
     return;
   }
+  setProjectRootInputs(project);
+  rememberProjectRoot(project);
   setStatus("Saving settings");
   const response = await fetch("/api/project/settings/save", {
     method: "POST",
@@ -1854,21 +2956,6 @@ async function saveProjectSettings() {
           height: Number(els.height.value || 720),
           language: els.previewLanguage.value || "English",
           state: previewStateValue(),
-        },
-        build: {
-          addonSource: els.addonSource.value.trim() || null,
-          outputRoot: els.buildOutput.value.trim() || null,
-          prefix: els.buildPrefix.value.trim() || null,
-          toolsRoot: els.toolsRoot.value.trim() || null,
-          allowDiagnostics: true,
-        },
-        workshop: {
-          itemId: els.workshopItemId.value.trim() || null,
-          title: els.workshopTitle.value.trim() || null,
-          changeNote: els.workshopChangeNote.value.trim() || null,
-          contentRoot: els.workshopContentRoot.value.trim() || null,
-          previewImage: els.workshopPreviewImage.value.trim() || null,
-          commandJson: els.workshopCommandJson.value.trim() || null,
         },
       },
     }),
@@ -1887,608 +2974,6 @@ async function saveProjectSettings() {
   setStatus("Settings saved");
 }
 
-async function loadEngineLaunchPlan() {
-  const project = els.projectRoot.value.trim();
-  const layout = state.data?.filePath || els.layoutPath.value.trim();
-  if (!project) {
-    showPanelDiagnostic("engine plan", "Project root is required.");
-    return;
-  }
-  if (!layout) {
-    showPanelDiagnostic("engine plan", "Layout file is required.");
-    return;
-  }
-  setStatus("Planning engine launch");
-  const params = new URLSearchParams({
-    project,
-    layout,
-    mode: "dayzDiag",
-  });
-  appendBuildProfileParams(params);
-  const response = await fetch(`/api/engine/launch-plan?${params}`);
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("engine plan failed", payload.error || "Unknown error");
-    setStatus("Engine plan failed");
-    return;
-  }
-  const command = payload.command
-    ? `${payload.command.executable} ${payload.command.args.join(" ")}`
-    : "";
-  els.diagnostics.innerHTML = `<div class="diag ${payload.ready ? "" : "warn"}">
-    <strong>engine launch plan</strong><br>
-    mode: ${escapeHtml(payload.mode)}<br>
-    ready: ${payload.ready}<br>
-    missing: ${escapeHtml(payload.missing.join(", ") || "none")}<br>
-    preview: ${escapeHtml(payload.previewRoot || "n/a")}<br>
-    mission: ${escapeHtml(payload.missionPath || "n/a")}
-    ${command ? `<pre>${escapeHtml(command)}</pre>` : ""}
-  </div>`;
-  setStatus(payload.ready ? "Engine plan ready" : "Engine plan incomplete");
-}
-
-async function generatePreviewWorkspace() {
-  const project = els.projectRoot.value.trim();
-  const layout = state.data?.filePath || els.layoutPath.value.trim();
-  if (!project) {
-    showPanelDiagnostic("preview workspace", "Project root is required.");
-    return;
-  }
-  if (!layout) {
-    showPanelDiagnostic("preview workspace", "Layout file is required.");
-    return;
-  }
-  setStatus("Generating preview workspace");
-  const response = await fetch("/api/engine/preview-workspace/save", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      projectRoot: project,
-      layoutPath: layout,
-      width: Number(els.width.value || 1280),
-      height: Number(els.height.value || 720),
-      language: els.previewLanguage.value || "English",
-      previewState: previewStateValue(),
-      toolsRoot: els.toolsRoot.value.trim() || null,
-    }),
-  });
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("preview workspace failed", payload.error || "Unknown error");
-    setStatus("Preview workspace failed");
-    return;
-  }
-  const files = (payload.files ?? []).map((file) => (
-    `<div>${escapeHtml(file.role)}: ${escapeHtml(file.filePath)} (${file.bytes} bytes)</div>`
-  )).join("");
-  els.diagnostics.innerHTML = `<div class="diag ${payload.launchPlan?.ready ? "" : "warn"}">
-    <strong>preview workspace generated</strong><br>
-    mission: ${escapeHtml(payload.missionPath)}<br>
-    layout: ${escapeHtml(payload.layoutRef)}<br>
-    missing: ${escapeHtml(payload.launchPlan?.missing?.join(", ") || "none")}
-    <div class="diffPreview">${files}</div>
-  </div>`;
-  setStatus("Preview workspace generated");
-}
-
-async function loadGeometryDiffReport() {
-  const layout = state.data?.filePath || els.layoutPath.value.trim();
-  const dump = els.engineDumpPath.value.trim();
-  if (!layout) {
-    showPanelDiagnostic("geometry diff", "Layout file is required.");
-    return;
-  }
-  if (!dump) {
-    showPanelDiagnostic("geometry diff", "Engine geometry dump path is required.");
-    return;
-  }
-  setStatus("Comparing geometry");
-  const params = new URLSearchParams({
-    layout,
-    dump,
-    width: String(state.data?.viewport.width ?? Number(els.width.value || 1280)),
-    height: String(state.data?.viewport.height ?? Number(els.height.value || 720)),
-    language: els.previewLanguage.value || "English",
-    tolerance: "1",
-  });
-  const project = els.projectRoot.value.trim();
-  if (project) params.set("project", project);
-  const response = await fetch(`/api/engine/geometry-diff?${params}`);
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("geometry diff failed", payload.error || "Unknown error");
-    setStatus("Geometry diff failed");
-    return;
-  }
-  const mismatchRows = (payload.mismatches ?? []).slice(0, 20).map((item) => (
-    `<div><strong>${escapeHtml(item.name)}</strong> delta ${escapeHtml(JSON.stringify(item.delta))}</div>`
-  )).join("");
-  const missingEngineRows = (payload.missingInEngine ?? []).slice(0, 20).map((item) => (
-    `<div>missing engine: ${escapeHtml(item.name)} (${escapeHtml(item.id)})</div>`
-  )).join("");
-  const missingPreviewRows = (payload.missingInPreview ?? []).slice(0, 20).map((item) => (
-    `<div>extra engine: ${escapeHtml(item.name)} (${escapeHtml(item.id || item.path || "")})</div>`
-  )).join("");
-  els.diagnostics.innerHTML = `<div class="diag ${payload.passed ? "" : "warn"}">
-    <strong>geometry diff</strong><br>
-    passed: ${payload.passed}<br>
-    matched: ${payload.summary.matched}<br>
-    mismatches: ${payload.summary.mismatches}<br>
-    missing in engine: ${payload.summary.missingInEngine}<br>
-    missing in preview: ${payload.summary.missingInPreview}<br>
-    max delta: ${payload.summary.maxDelta}px
-    <div class="diffPreview">${mismatchRows}${missingEngineRows}${missingPreviewRows}</div>
-  </div>`;
-  setStatus(payload.passed ? "Geometry matches" : "Geometry differs");
-}
-
-async function loadPixelDiffReport() {
-  const expected = els.expectedScreenshotPath.value.trim();
-  const actual = els.actualScreenshotPath.value.trim();
-  const diff = els.pixelDiffPath.value.trim();
-  if (!expected) {
-    showPanelDiagnostic("pixel diff", "Expected screenshot path is required.");
-    return;
-  }
-  if (!actual) {
-    showPanelDiagnostic("pixel diff", "Engine screenshot path is required.");
-    return;
-  }
-  setStatus("Comparing screenshots");
-  const params = new URLSearchParams({
-    expected,
-    actual,
-    tolerance: "0",
-  });
-  if (diff) params.set("diff", diff);
-  const response = await fetch(`/api/engine/pixel-diff?${params}`);
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("pixel diff failed", payload.error || "Unknown error");
-    setStatus("Pixel diff failed");
-    return;
-  }
-  els.diagnostics.innerHTML = `<div class="diag ${payload.passed ? "" : "warn"}">
-    <strong>pixel diff</strong><br>
-    passed: ${payload.passed}<br>
-    expected: ${payload.expected.width}x${payload.expected.height}<br>
-    actual: ${payload.actual.width}x${payload.actual.height}<br>
-    differing pixels: ${payload.summary.differingPixels} / ${payload.summary.totalPixels}<br>
-    mismatch ratio: ${payload.summary.mismatchRatio}<br>
-    max channel delta: ${payload.summary.maxChannelDelta}<br>
-    diff image: ${escapeHtml(payload.diffImage?.filePath || "not written")}
-  </div>`;
-  setStatus(payload.passed ? "Screenshots match" : "Screenshots differ");
-}
-
-async function loadLayoutDiffReport() {
-  const before = els.compareLayoutPath.value.trim();
-  const after = state.data?.filePath || els.layoutPath.value.trim();
-  if (!before) {
-    showPanelDiagnostic("layout diff", "Compare layout path is required.");
-    return;
-  }
-  if (!after) {
-    showPanelDiagnostic("layout diff", "Current layout file is required.");
-    return;
-  }
-  setStatus("Comparing layouts");
-  const params = new URLSearchParams({
-    before,
-    after,
-  });
-  const response = await fetch(`/api/layout/diff?${params}`);
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("layout diff failed", payload.error || "Unknown error");
-    setStatus("Layout diff failed");
-    return;
-  }
-  const addedRows = (payload.addedWidgets ?? []).slice(0, 12).map((widget) => (
-    `<div>+ ${escapeHtml(widget.name)} <code>${escapeHtml(widget.typeClass)}</code></div>`
-  )).join("");
-  const removedRows = (payload.removedWidgets ?? []).slice(0, 12).map((widget) => (
-    `<div>- ${escapeHtml(widget.name)} <code>${escapeHtml(widget.typeClass)}</code></div>`
-  )).join("");
-  const changedRows = (payload.changedWidgets ?? []).slice(0, 12).map((widget) => {
-    const changeLabels = widget.changes.slice(0, 5).map((change) => (
-      change.key ? `${change.kind}:${change.key}` : change.kind
-    )).join(", ");
-    return `<div>* ${escapeHtml(widget.after.name)} <code>${escapeHtml(changeLabels)}</code></div>`;
-  }).join("");
-  const detailRows = addedRows + removedRows + changedRows;
-  els.diagnostics.innerHTML = `<div class="diag ${payload.passed ? "" : "warn"}">
-    <strong>layout diff</strong><br>
-    passed: ${payload.passed}<br>
-    matched: ${payload.summary.matchedWidgets}<br>
-    added: ${payload.summary.addedWidgets}<br>
-    removed: ${payload.summary.removedWidgets}<br>
-    changed widgets: ${payload.summary.changedWidgets}<br>
-    parent changes: ${payload.summary.parentChanges}<br>
-    property changes: ${payload.summary.propertyChanges}<br>
-    diagnostics: ${payload.summary.diagnostics}
-    <div class="diffPreview">${detailRows || "No structural changes."}</div>
-  </div>`;
-  setStatus(payload.passed ? "Layouts match" : "Layouts differ");
-}
-
-async function generateLayoutPatch() {
-  const before = els.compareLayoutPath.value.trim();
-  const after = state.data?.filePath || els.layoutPath.value.trim();
-  const out = els.layoutPatchPath.value.trim();
-  if (!before) {
-    showPanelDiagnostic("generate patch", "Compare layout path is required.");
-    return;
-  }
-  if (!after) {
-    showPanelDiagnostic("generate patch", "Current layout file is required.");
-    return;
-  }
-  setStatus("Generating patch");
-  const params = new URLSearchParams({
-    before,
-    after,
-  });
-  if (out) params.set("out", out);
-  const response = await fetch(`/api/layout/patch/generate?${params}`);
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("generate patch failed", payload.error || "Unknown error");
-    setStatus("Patch generation failed");
-    return;
-  }
-  state.layoutPatch = payload;
-  const rows = (payload.operations ?? []).slice(0, 20).map((operation) => (
-    `<div>+ ${escapeHtml(operation.op)} <code>${escapeHtml(operation.meta?.reason || "")}</code></div>`
-  )).join("");
-  const conflictRows = renderPatchConflictControls(payload.conflicts ?? []);
-  els.diagnostics.innerHTML = `<div class="diag ${payload.conflicts?.length ? "warn" : ""}">
-    <strong>generated patch</strong><br>
-    operations: ${payload.operations?.length ?? 0}<br>
-    conflicts: ${payload.conflicts?.length ?? 0}<br>
-    written: ${Boolean(payload.written)}<br>
-    out: ${escapeHtml(payload.out || "not written")}<br>
-    before: ${escapeHtml(payload.beforeHash || "n/a")}<br>
-    after: ${escapeHtml(payload.afterHash || "n/a")}
-    <div class="diffPreview">${conflictRows}${rows || "No operations."}</div>
-  </div>`;
-  setStatus(payload.conflicts?.length ? "Patch has conflicts" : "Patch generated");
-}
-
-async function resolveLayoutPatch() {
-  const patchFile = els.layoutPatchPath.value.trim();
-  const patch = state.layoutPatch && !patchFile ? state.layoutPatch : null;
-  if (!patchFile && !patch) {
-    showPanelDiagnostic("resolve patch", "Patch file path is required unless a generated patch is loaded.");
-    return;
-  }
-  const decisions = readPatchConflictDecisions();
-  setStatus("Resolving patch");
-  const response = await fetch("/api/layout/patch/resolve", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      patchFile: patchFile || null,
-      patch,
-      write: Boolean(patchFile),
-      defaultAction: "skip",
-      decisions,
-      note: "Resolved from DZUI web shell.",
-    }),
-  });
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("resolve patch failed", payload.error || "Unknown error");
-    setStatus("Patch resolve failed");
-    return;
-  }
-  state.layoutPatch = payload;
-  const resolvedRows = (payload.resolvedConflicts ?? []).slice(-20).map((item) => (
-    `<div>+ ${escapeHtml(item.code)} ${escapeHtml(item.widget?.name || "")} <code>${escapeHtml(item.resolution?.action || "")}</code></div>`
-  )).join("");
-  const remainingRows = renderPatchConflictControls(payload.conflicts ?? []);
-  els.diagnostics.innerHTML = `<div class="diag ${payload.conflicts?.length ? "warn" : ""}">
-    <strong>resolved patch</strong><br>
-    resolved: ${payload.resolutionSummary?.resolvedConflicts ?? 0}<br>
-    remaining: ${payload.resolutionSummary?.unresolvedConflicts ?? 0}<br>
-    written: ${Boolean(payload.written)}<br>
-    out: ${escapeHtml(payload.out || "not written")}
-    <div class="diffPreview">${remainingRows}${resolvedRows || "No conflicts."}</div>
-  </div>`;
-  setStatus(payload.conflicts?.length ? "Patch still has conflicts" : "Patch resolved");
-}
-
-function renderPatchConflictControls(conflicts) {
-  if (!conflicts.length) return "";
-  return `<div class="conflictControls">
-    ${conflicts.slice(0, 50).map((item, index) => renderPatchConflictRow(item, index)).join("")}
-  </div>`;
-}
-
-function renderPatchConflictRow(item, index) {
-  const widgetName = item.widget?.name || "";
-  const widgetId = item.widget?.id || "";
-  return `<div class="conflictRow" data-conflict-index="${index}" data-conflict-code="${escapeHtml(item.code)}" data-conflict-widget-name="${escapeHtml(widgetName)}" data-conflict-widget-id="${escapeHtml(widgetId)}">
-    <div>
-      <strong>${escapeHtml(item.code)}</strong>
-      <span>${escapeHtml(widgetName || widgetId || "unknown widget")}</span>
-      <small>${escapeHtml(item.message || "")}</small>
-    </div>
-    <select data-conflict-action>
-      <option value="skip">Skip</option>
-      <option value="acceptGeneratedOperations">Accept generated</option>
-      <option value="unresolved">Keep unresolved</option>
-    </select>
-  </div>`;
-}
-
-function readPatchConflictDecisions() {
-  return [...els.diagnostics.querySelectorAll("[data-conflict-index]")].map((row) => ({
-    index: Number(row.dataset.conflictIndex),
-    code: row.dataset.conflictCode || undefined,
-    widgetName: row.dataset.conflictWidgetName || undefined,
-    widgetId: row.dataset.conflictWidgetId || undefined,
-    action: row.querySelector("[data-conflict-action]")?.value || "skip",
-    note: "Selected in DZUI conflict UI.",
-  }));
-}
-
-async function runLayoutPatch(write) {
-  const file = state.data?.filePath || els.layoutPath.value.trim();
-  const patchFile = els.layoutPatchPath.value.trim();
-  if (!file) {
-    showPanelDiagnostic("layout patch", "Current layout file is required.");
-    return;
-  }
-  if (!patchFile) {
-    showPanelDiagnostic("layout patch", "Patch file path is required.");
-    return;
-  }
-  setStatus(write ? "Applying patch" : "Checking patch");
-  const response = await fetch("/api/layout/patch/apply", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      file,
-      patchFile,
-      write,
-      project: els.projectRoot.value.trim() || null,
-      width: state.data?.viewport.width ?? Number(els.width.value || 1280),
-      height: state.data?.viewport.height ?? Number(els.height.value || 720),
-      language: els.previewLanguage.value || "English",
-      previewState: previewStateValue(),
-    }),
-  });
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("layout patch failed", payload.reason || payload.error || "Unknown error");
-    setStatus("Patch failed");
-    return;
-  }
-
-  if (payload.preview) {
-    state.data = payload.preview;
-    syncSelectionAfterPreview(state.selectedId);
-    await refreshSourceState();
-  }
-
-  const rows = (payload.operations ?? []).slice(0, 20).map((operation) => {
-    const marker = operation.ok ? "+" : "!";
-    const target = operation.widget?.name || operation.parent?.name || operation.updates?.join(", ") || "";
-    return `<div>${marker} ${escapeHtml(operation.op)} ${escapeHtml(target)}</div>`;
-  }).join("");
-  els.diagnostics.innerHTML = `<div class="diag ${payload.ok ? "" : "warn"}">
-    <strong>layout patch</strong><br>
-    ok: ${Boolean(payload.ok)}<br>
-    written: ${Boolean(payload.written)}<br>
-    changed: ${Boolean(payload.changed)}<br>
-    operations: ${payload.appliedCount} / ${payload.operationCount}<br>
-    before: ${escapeHtml(payload.beforeHash || "n/a")}<br>
-    after: ${escapeHtml(payload.afterHash || "n/a")}<br>
-    history: ${escapeHtml(payload.transaction?.historyPath || "n/a")}
-    <div class="diffPreview">${rows || "No operations."}</div>
-  </div>`;
-  setStatus(payload.written ? "Patch applied" : payload.ok ? "Patch ready" : "Patch failed");
-  renderAll();
-}
-
-async function runEngineCapture() {
-  const project = els.projectRoot.value.trim();
-  const layout = state.data?.filePath || els.layoutPath.value.trim();
-  if (!project) {
-    showPanelDiagnostic("capture run", "Project root is required.");
-    return;
-  }
-  if (!layout) {
-    showPanelDiagnostic("capture run", "Layout file is required.");
-    return;
-  }
-  setStatus("Running capture");
-  const response = await fetch("/api/engine/capture/run", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      projectRoot: project,
-      layoutPath: layout,
-      expectedScreenshotPath: els.expectedScreenshotPath.value.trim() || null,
-      actualScreenshotPath: els.actualScreenshotPath.value.trim() || null,
-      geometryDumpPath: els.engineDumpPath.value.trim() || null,
-      pixelDiffPath: els.pixelDiffPath.value.trim() || null,
-      toolsRoot: els.toolsRoot.value.trim() || null,
-      timeoutMs: 300000,
-      waitMs: 1000,
-    }),
-  });
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("capture run failed", payload.error || "Unknown error");
-    setStatus("Capture failed");
-    return;
-  }
-  const outputs = payload.outputs ?? {};
-  els.diagnostics.innerHTML = `<div class="diag ${payload.ok ? "" : "warn"}">
-    <strong>capture run</strong><br>
-    ok: ${Boolean(payload.ok)}<br>
-    skipped: ${Boolean(payload.skipped)}<br>
-    exit: ${payload.exitCode ?? "n/a"}<br>
-    reason: ${escapeHtml(payload.reason || "n/a")}<br>
-    actual screenshot: ${Boolean(outputs.actualScreenshot)}<br>
-    geometry dump: ${Boolean(outputs.geometryDump)}<br>
-    pixel report: ${escapeHtml(payload.pixelReport?.filePath || "n/a")}<br>
-    geometry report: ${escapeHtml(payload.geometryReport?.filePath || "n/a")}<br>
-    log: ${escapeHtml(payload.logPath || "n/a")}
-  </div>`;
-  setStatus(payload.ok ? "Capture complete" : payload.skipped ? "Capture skipped" : "Capture failed");
-}
-
-async function loadBuildPlan() {
-  const project = els.projectRoot.value.trim();
-  if (!project) {
-    showPanelDiagnostic("build plan", "Project root is required.");
-    return;
-  }
-  setStatus("Building plan");
-  const params = new URLSearchParams({
-    project,
-    allowDiagnostics: "true",
-  });
-  appendBuildProfileParams(params);
-  const response = await fetch(`/api/build/plan?${params}`);
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("build plan failed", payload.error || "Unknown error");
-    setStatus("Build plan failed");
-    return;
-  }
-  els.diagnostics.innerHTML = `<div class="diag ${payload.ready ? "" : "warn"}">
-    <strong>build plan</strong><br>
-    ready: ${payload.ready}<br>
-    missing: ${escapeHtml(payload.missing.join(", ") || "none")}<br>
-    pbo: ${escapeHtml(payload.pboPath)}<br>
-    validation: ${payload.manifest.validationDiagnostics} diagnostics
-  </div>`;
-  setStatus(payload.ready ? "Build plan ready" : "Build plan incomplete");
-}
-
-async function runBuildWorkflow() {
-  const project = els.projectRoot.value.trim();
-  if (!project) {
-    showPanelDiagnostic("build run", "Project root is required.");
-    return;
-  }
-  setStatus("Running build");
-  const params = new URLSearchParams({
-    project,
-    allowDiagnostics: "true",
-  });
-  appendBuildProfileParams(params);
-  const response = await fetch(`/api/build/run?${params}`);
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("build run failed", payload.error || "Unknown error");
-    setStatus("Build run failed");
-    return;
-  }
-
-  const stdout = truncateText(payload.stdout || "", 2500);
-  const stderr = truncateText(payload.stderr || "", 2500);
-  const reason = payload.reason ? `<br>reason: ${escapeHtml(payload.reason)}` : "";
-  const command = payload.plan?.command
-    ? `${payload.plan.command.executable} ${payload.plan.command.args.join(" ")}`
-    : "";
-  els.diagnostics.innerHTML = `<div class="diag ${payload.ok ? "" : "warn"}">
-    <strong>build run</strong><br>
-    ok: ${Boolean(payload.ok)}<br>
-    skipped: ${Boolean(payload.skipped)}<br>
-    exit: ${payload.exitCode ?? "n/a"}<br>
-    pbo exists: ${Boolean(payload.pboExists)}<br>
-    pbo: ${escapeHtml(payload.pboPath || payload.plan?.pboPath || "n/a")}<br>
-    log: ${escapeHtml(payload.logPath || "n/a")}${reason}
-    ${command ? `<pre>${escapeHtml(command)}</pre>` : ""}
-    ${stdout ? `<pre>${escapeHtml(stdout)}</pre>` : ""}
-    ${stderr ? `<pre>${escapeHtml(stderr)}</pre>` : ""}
-  </div>`;
-  setStatus(payload.ok ? "Build complete" : payload.skipped ? "Build skipped" : "Build failed");
-}
-
-async function loadWorkshopPublishPlan() {
-  const project = els.projectRoot.value.trim();
-  if (!project) {
-    showPanelDiagnostic("workshop plan", "Project root is required.");
-    return;
-  }
-  setStatus("Planning Workshop publish");
-  const params = new URLSearchParams({
-    project,
-    allowDiagnostics: "true",
-  });
-  appendBuildProfileParams(params);
-  appendWorkshopPublishParams(params);
-  const response = await fetch(`/api/workshop/plan?${params}`);
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("workshop plan failed", payload.error || "Unknown error");
-    setStatus("Workshop plan failed");
-    return;
-  }
-  const missing = Array.isArray(payload.missing) ? payload.missing : [];
-  const command = payload.command
-    ? `${payload.command.executable} ${payload.command.args.join(" ")}`
-    : "";
-  els.diagnostics.innerHTML = `<div class="diag ${payload.ready ? "" : "warn"}">
-    <strong>workshop publish plan</strong><br>
-    ready: ${Boolean(payload.ready)}<br>
-    missing: ${escapeHtml(missing.join(", ") || "none")}<br>
-    item: ${escapeHtml(payload.workshopItemId || "n/a")}<br>
-    content: ${escapeHtml(payload.contentRoot || "n/a")}<br>
-    pbo: ${escapeHtml(payload.pboPath || "n/a")}<br>
-    publisher: ${escapeHtml(payload.tools?.publisherCmd || payload.tools?.publisher || "n/a")}<br>
-    validation: ${payload.validation?.diagnosticCount ?? 0} diagnostics
-    ${command ? `<pre>${escapeHtml(command)}</pre>` : ""}
-  </div>`;
-  setStatus(payload.ready ? "Workshop plan ready" : "Workshop plan incomplete");
-}
-
-async function runWorkshopPublish() {
-  const project = els.projectRoot.value.trim();
-  if (!project) {
-    showPanelDiagnostic("workshop publish", "Project root is required.");
-    return;
-  }
-  setStatus("Publishing Workshop item");
-  const response = await fetch("/api/workshop/run", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(readWorkshopPublishBody(project)),
-  });
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic("workshop publish failed", payload.error || "Unknown error");
-    setStatus("Workshop publish failed");
-    return;
-  }
-
-  const stdout = truncateText(payload.stdout || "", 2500);
-  const stderr = truncateText(payload.stderr || "", 2500);
-  const reason = payload.reason ? `<br>reason: ${escapeHtml(payload.reason)}` : "";
-  const command = payload.plan?.command
-    ? `${payload.plan.command.executable} ${payload.plan.command.args.join(" ")}`
-    : "";
-  els.diagnostics.innerHTML = `<div class="diag ${payload.ok ? "" : "warn"}">
-    <strong>workshop publish</strong><br>
-    ok: ${Boolean(payload.ok)}<br>
-    skipped: ${Boolean(payload.skipped)}<br>
-    exit: ${payload.exitCode ?? "n/a"}<br>
-    item: ${escapeHtml(payload.plan?.workshopItemId || "n/a")}<br>
-    content: ${escapeHtml(payload.plan?.contentRoot || "n/a")}<br>
-    log: ${escapeHtml(payload.logPath || "n/a")}${reason}
-    ${command ? `<pre>${escapeHtml(command)}</pre>` : ""}
-    ${stdout ? `<pre>${escapeHtml(stdout)}</pre>` : ""}
-    ${stderr ? `<pre>${escapeHtml(stderr)}</pre>` : ""}
-  </div>`;
-  setStatus(payload.ok ? "Workshop publish complete" : payload.skipped ? "Workshop publish skipped" : "Workshop publish failed");
-}
-
 function ensureLanguageOption(language) {
   const value = String(language || "English");
   if (![...els.previewLanguage.options].some((option) => option.value === value)) {
@@ -2498,50 +2983,6 @@ function ensureLanguageOption(language) {
     els.previewLanguage.append(option);
   }
   els.previewLanguage.value = value;
-}
-
-function appendBuildProfileParams(params) {
-  const addon = els.addonSource.value.trim();
-  const output = els.buildOutput.value.trim();
-  const prefix = els.buildPrefix.value.trim();
-  const tools = els.toolsRoot.value.trim();
-  if (addon) params.set("addon", addon);
-  if (output) params.set("out", output);
-  if (prefix) params.set("prefix", prefix);
-  if (tools) params.set("tools", tools);
-}
-
-function appendWorkshopPublishParams(params) {
-  const item = els.workshopItemId.value.trim();
-  const title = els.workshopTitle.value.trim();
-  const changeNote = els.workshopChangeNote.value.trim();
-  const content = els.workshopContentRoot.value.trim();
-  const preview = els.workshopPreviewImage.value.trim();
-  const commandJson = els.workshopCommandJson.value.trim();
-  if (item) params.set("item", item);
-  if (title) params.set("title", title);
-  if (changeNote) params.set("changeNote", changeNote);
-  if (content) params.set("content", content);
-  if (preview) params.set("preview", preview);
-  if (commandJson) params.set("commandJson", commandJson);
-}
-
-function readWorkshopPublishBody(projectRoot) {
-  return {
-    projectRoot,
-    addonSource: els.addonSource.value.trim() || null,
-    outputRoot: els.buildOutput.value.trim() || null,
-    prefix: els.buildPrefix.value.trim() || null,
-    toolsRoot: els.toolsRoot.value.trim() || null,
-    workshopItemId: els.workshopItemId.value.trim() || null,
-    title: els.workshopTitle.value.trim() || null,
-    changeNote: els.workshopChangeNote.value.trim() || null,
-    contentRoot: els.workshopContentRoot.value.trim() || null,
-    previewImage: els.workshopPreviewImage.value.trim() || null,
-    commandJson: els.workshopCommandJson.value.trim() || null,
-    allowDiagnostics: true,
-    timeoutMs: 300000,
-  };
 }
 
 async function loadControllerSkeleton() {
@@ -3121,45 +3562,6 @@ async function packAtlas() {
   setStatus("Atlas packed");
 }
 
-async function convertTexture(run) {
-  const sourceImage = els.textureSource.value.trim() || resolveProjectOutputPath(els.imageAssetPath.value.trim());
-  if (!sourceImage) {
-    showPanelDiagnostic("texture convert", "Texture source is required.");
-    return;
-  }
-  const endpoint = run ? "/api/texture/convert/run" : "/api/texture/convert/plan";
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sourceImage,
-      outputPath: els.textureOutput.value.trim() || undefined,
-      format: els.textureFormat.value,
-      toolsRoot: els.toolsRoot.value.trim() || undefined,
-      allowNotReady: false,
-    }),
-  });
-  const payload = await response.json();
-  if (!response.ok) {
-    showPanelDiagnostic(run ? "texture convert failed" : "texture convert plan", payload.reason || payload.error || payload.missing?.join(", ") || "Unknown error");
-    return;
-  }
-  const plan = run ? payload.plan : payload;
-  els.diagnostics.innerHTML = `<div class="diag ${plan.warnings?.length ? "warn" : ""}">
-    <strong>${run ? "texture converted" : "texture conversion plan"}</strong><br>
-    ${escapeHtml(plan.sourcePath)}<br>
-    ${escapeHtml(plan.outputPath)}<br>
-    ready: ${plan.ready ? "yes" : "no"}${run ? `<br>ok: ${payload.ok ? "yes" : "no"}<br>log: ${escapeHtml(payload.logPath || "n/a")}` : ""}
-  </div>`;
-  setStatus(run ? "Texture converted" : "Texture plan ready");
-}
-
-function resolveProjectOutputPath(virtualPath) {
-  const project = els.projectRoot.value.trim();
-  if (!project || !virtualPath) return "";
-  return `${project.replace(/[\\/]$/, "")}\\${virtualPath.replaceAll("/", "\\")}`;
-}
-
 function renderDiagnosticList(diagnostics) {
   if (!diagnostics.length) return "";
   return diagnostics.slice(0, 80).map((diagnostic) => {
@@ -3175,6 +3577,7 @@ function renderDiagnosticList(diagnostics) {
 
 function showPanelDiagnostic(title, message) {
   els.diagnostics.innerHTML = `<div class="diag error"><strong>${escapeHtml(title)}</strong><br>${escapeHtml(message)}</div>`;
+  pushLayoutLog("error", "panel", title, { message });
 }
 
 async function draw() {
@@ -3184,11 +3587,11 @@ async function draw() {
   }
 
   ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
-  ctx.fillStyle = "#101413";
+  ctx.fillStyle = "#474747";
   ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
   drawGrid();
 
-  for (const node of state.data.nodes) {
+  for (const node of renderOrderedNodes(state.data.nodes)) {
     if (!node.visible) continue;
     await drawNode(node);
   }
@@ -3203,23 +3606,31 @@ async function drawNode(node) {
   const multiSelected = state.selectedIds.has(node.id);
   const lowerType = node.typeClass.toLowerCase();
   const isText = lowerType.includes("text");
-  const isImage = lowerType.includes("image");
+  const styleDrawn = await drawStyleRender(node, x, y, width, height);
 
   if (node.images.length) {
     for (const image of node.images) {
-      const drawn = await drawImageSlot(image, x, y, width, height);
+      const drawn = await drawImageSlot(image, x, y, width, height, node);
       if (!drawn) drawImagePlaceholder(image, x, y, width, height);
     }
-  } else if (!isText) {
-    ctx.fillStyle = rgbaCss(renderColorForNode(node), isImage ? "rgba(69, 122, 103, 0.22)" : "rgba(16, 22, 21, 0.42)", renderAlphaForNode(node));
+  } else if (!styleDrawn && !isText && !isEditorRootBackdrop(node) && Array.isArray(renderColorForNode(node))) {
+    ctx.fillStyle = rgbaCss(renderColorForNode(node), "rgba(16, 22, 21, 0)", renderAlphaForNode(node));
     ctx.fillRect(x, y, width, height);
   }
 
   if (node.text) {
+    const textInset = checkboxTextInset(node);
     ctx.fillStyle = rgbaCss(renderColorForNode(node), "#edf4f1", renderAlphaForNode(node));
-    ctx.font = `${Math.max(12, Math.min(24, height * 0.45))}px Segoe UI, Arial`;
-    ctx.textBaseline = "middle";
-    ctx.fillText(node.text, x + 6, y + (height / 2), Math.max(1, width - 12));
+    const fontSize = Number(node.textLayout?.exactSize)
+      || Math.max(12, Math.min(24, height * 0.45));
+    ctx.font = `${node.textLayout?.bold ? 700 : 400} ${Math.max(1, fontSize)}px Segoe UI, Arial`;
+    ctx.textAlign = textCanvasAlign(node.textLayout?.halign);
+    ctx.textBaseline = textCanvasBaseline(node.textLayout?.valign);
+    const textX = textCanvasX(node, x, width, textInset);
+    const textY = textCanvasY(node, y, height);
+    ctx.fillText(node.text, textX, textY, Math.max(1, width - 12 - textInset));
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
   }
 
   ctx.strokeStyle = selected
@@ -3362,6 +3773,15 @@ function renderAlphaForNode(node) {
   return Number(node.renderAlpha ?? node.alpha ?? 1);
 }
 
+function isEditorRootBackdrop(node) {
+  if (node.depth !== 0 || !state.data?.viewport) return false;
+  const box = node.box ?? {};
+  return Math.abs((box.x ?? 0)) < 0.5
+    && Math.abs((box.y ?? 0)) < 0.5
+    && Math.abs((box.width ?? 0) - state.data.viewport.width) < 0.5
+    && Math.abs((box.height ?? 0) - state.data.viewport.height) < 0.5;
+}
+
 function previewStateValue() {
   return els.previewState?.value || "normal";
 }
@@ -3389,16 +3809,202 @@ function dragDisplayBox(node) {
   return drag.nodeId === node.id ? drag.previewBox : node.box;
 }
 
-async function drawImageSlot(image, x, y, width, height) {
-  if (!image.url) return false;
-  const bitmap = await loadImage(image.url).catch(() => null);
-  if (!bitmap) return false;
-  if (image.crop) {
-    ctx.drawImage(bitmap, image.crop.x, image.crop.y, image.crop.width, image.crop.height, x, y, width, height);
+async function drawImageSlot(image, x, y, width, height, node = null) {
+  let bitmap = null;
+  if (image.url) {
+    try {
+      bitmap = await loadImage(image.url);
+      logImageLoadSuccess("browser", image, bitmap, node);
+    } catch (error) {
+      logImageLoadFailure("browser", image, error, node);
+      return false;
+    }
+  } else if (image.nativeTexture?.url) {
+    try {
+      bitmap = await loadNativeTexture(image.nativeTexture);
+      logImageLoadSuccess("native", image, bitmap, node);
+    } catch (error) {
+      logImageLoadFailure("native", image, error, node);
+      return false;
+    }
   } else {
-    ctx.drawImage(bitmap, x, y, width, height);
+    logImageLoadFailure("unresolved", image, new Error("Image slot has no browser URL or native texture URL."), node);
+    return false;
+  }
+  if (!bitmap) return false;
+  const source = bitmap.source ?? bitmap;
+  if (image.crop) {
+    ctx.drawImage(source, image.crop.x, image.crop.y, image.crop.width, image.crop.height, x, y, width, height);
+  } else {
+    ctx.drawImage(source, x, y, width, height);
   }
   return true;
+}
+
+async function drawStyleRender(node, x, y, width, height) {
+  const render = node.styleRender;
+  const items = render?.items ?? [];
+  if (!items.length || width <= 0 || height <= 0) return false;
+  if (render.widgetType === "CheckBoxWidget") {
+    return drawCheckboxStyle(node, x, y, width, height);
+  }
+  if (items.every((item) => /whitepixel/i.test(item.ref ?? ""))) return false;
+  const nine = styleNineSlice(items);
+  if (nine.center && Object.values(nine).some((item) => item && item !== nine.center)) {
+    return drawNineSliceStyle(nine, node, x, y, width, height);
+  }
+  const center = findStyleItem(items, ["center", "background", "panel", "image", "body"]) ?? items[0];
+  return drawImageSlot(center, x, y, width, height, node);
+}
+
+async function drawCheckboxStyle(node, x, y, width, height) {
+  const items = node.styleRender?.items ?? [];
+  const drawable = items.filter((item) => {
+    const name = styleItemKey(item);
+    return name.includes("checkbox") || name.includes("check") || name.includes("mark");
+  });
+  const targets = drawable.length ? drawable : items.slice(0, 1);
+  let drawnAny = false;
+  for (const item of targets) {
+    const naturalWidth = item.crop?.width ?? Math.min(20, height);
+    const naturalHeight = item.crop?.height ?? Math.min(20, height);
+    const drawWidth = Math.min(width, naturalWidth);
+    const drawHeight = Math.min(height, naturalHeight);
+    const drawX = x;
+    const drawY = y + ((height - drawHeight) / 2);
+    drawnAny = await drawImageSlot(item, drawX, drawY, drawWidth, drawHeight, node) || drawnAny;
+  }
+  return drawnAny;
+}
+
+function checkboxTextInset(node) {
+  if (node.styleRender?.widgetType !== "CheckBoxWidget") return 0;
+  const item = findStyleItem(node.styleRender.items ?? [], ["checkbox", "checkboxnormal", "check"]);
+  return item ? (item.crop?.width ?? 20) + 4 : 24;
+}
+
+function textCanvasAlign(halign) {
+  if (halign === "center") return "center";
+  if (halign === "right") return "right";
+  return "left";
+}
+
+function textCanvasBaseline(valign) {
+  if (valign === "top") return "top";
+  if (valign === "bottom") return "bottom";
+  return "middle";
+}
+
+function textCanvasX(node, x, width, inset) {
+  const halign = node.textLayout?.halign;
+  if (halign === "center") return x + (width / 2) + (inset / 2);
+  if (halign === "right") return x + width - 6;
+  return x + 6 + inset;
+}
+
+function textCanvasY(node, y, height) {
+  const valign = node.textLayout?.valign;
+  if (valign === "top") return y + 2;
+  if (valign === "bottom") return y + height - 2;
+  return y + (height / 2);
+}
+
+function styleNineSlice(items) {
+  return {
+    leftTop: findStyleItem(items, ["lefttop", "topleft"]),
+    top: findStyleItem(items, ["top"]),
+    rightTop: findStyleItem(items, ["righttop", "topright"]),
+    left: findStyleItem(items, ["left"]),
+    center: findStyleItem(items, ["center", "middle"]),
+    right: findStyleItem(items, ["right"]),
+    leftBottom: findStyleItem(items, ["leftbottom", "bottomleft"]),
+    bottom: findStyleItem(items, ["bottom"]),
+    rightBottom: findStyleItem(items, ["rightbottom", "bottomright"]),
+  };
+}
+
+async function drawNineSliceStyle(nine, node, x, y, width, height) {
+  const leftWidth = Math.min(
+    Math.max(naturalWidth(nine.left, naturalWidth(nine.leftTop, 0)), 0),
+    width / 2,
+  );
+  const rightWidth = Math.min(
+    Math.max(naturalWidth(nine.right, naturalWidth(nine.rightTop, 0)), 0),
+    width / 2,
+  );
+  const topHeight = Math.min(
+    Math.max(naturalHeight(nine.top, naturalHeight(nine.leftTop, 0)), 0),
+    height / 2,
+  );
+  const bottomHeight = Math.min(
+    Math.max(naturalHeight(nine.bottom, naturalHeight(nine.leftBottom, 0)), 0),
+    height / 2,
+  );
+  const middleWidth = Math.max(0, width - leftWidth - rightWidth);
+  const middleHeight = Math.max(0, height - topHeight - bottomHeight);
+  const jobs = [
+    [nine.leftTop, x, y, leftWidth, topHeight],
+    [nine.top, x + leftWidth, y, middleWidth, topHeight],
+    [nine.rightTop, x + leftWidth + middleWidth, y, rightWidth, topHeight],
+    [nine.left, x, y + topHeight, leftWidth, middleHeight],
+    [nine.center, x + leftWidth, y + topHeight, middleWidth, middleHeight],
+    [nine.right, x + leftWidth + middleWidth, y + topHeight, rightWidth, middleHeight],
+    [nine.leftBottom, x, y + topHeight + middleHeight, leftWidth, bottomHeight],
+    [nine.bottom, x + leftWidth, y + topHeight + middleHeight, middleWidth, bottomHeight],
+    [nine.rightBottom, x + leftWidth + middleWidth, y + topHeight + middleHeight, rightWidth, bottomHeight],
+  ];
+  let drawnAny = false;
+  for (const [item, dx, dy, dw, dh] of jobs) {
+    if (!item || dw <= 0 || dh <= 0) continue;
+    drawnAny = await drawImageSlot(item, dx, dy, dw, dh, node) || drawnAny;
+  }
+  return drawnAny;
+}
+
+function findStyleItem(items, names) {
+  const wanted = new Set(names.map((name) => String(name).toLowerCase()));
+  return items.find((item) => wanted.has(styleItemKey(item))) ?? null;
+}
+
+function styleItemKey(item) {
+  return String(item?.itemName ?? item?.imageName ?? item?.ref ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^.*\bimage:/, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function naturalWidth(item, fallback = 0) {
+  return Number(item?.crop?.width ?? fallback);
+}
+
+function naturalHeight(item, fallback = 0) {
+  return Number(item?.crop?.height ?? fallback);
+}
+
+function renderOrderedNodes(nodes) {
+  const childrenByParent = new Map();
+  for (const [index, node] of nodes.entries()) {
+    const parentId = node.parentId ?? null;
+    if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+    childrenByParent.get(parentId).push({ node, index });
+  }
+  for (const siblings of childrenByParent.values()) {
+    siblings.sort((a, b) => {
+      const priority = Number(a.node.priority ?? 0) - Number(b.node.priority ?? 0);
+      return priority || a.index - b.index;
+    });
+  }
+
+  const ordered = [];
+  const append = (parentId) => {
+    for (const entry of childrenByParent.get(parentId) ?? []) {
+      ordered.push(entry.node);
+      append(entry.node.id);
+    }
+  };
+  append(null);
+  return ordered;
 }
 
 function drawImagePlaceholder(image, x, y, width, height) {
@@ -3411,7 +4017,7 @@ function drawImagePlaceholder(image, x, y, width, height) {
   ctx.fillStyle = "#f0d094";
   ctx.font = "12px Segoe UI, Arial";
   ctx.textBaseline = "top";
-  ctx.fillText(image.cacheKey ? "EDDS cache pending" : "image missing", x + 6, y + 6, Math.max(1, width - 12));
+  ctx.fillText(imagePlaceholderText(image), x + 6, y + 6, Math.max(1, width - 12));
 }
 
 function loadImage(url) {
@@ -3424,6 +4030,22 @@ function loadImage(url) {
   });
   state.imageCache.set(url, promise);
   return promise;
+}
+
+function loadNativeTexture(texture) {
+  const key = `native:${texture.url}`;
+  if (state.imageCache.has(key)) return state.imageCache.get(key);
+  const promise = loadNativeTextureBitmap(texture);
+  state.imageCache.set(key, promise);
+  return promise;
+}
+
+function imagePlaceholderText(image) {
+  if (image.nativeTexture) {
+    const format = image.nativeTexture.format || String(image.nativeTexture.ext || "texture").replace(/^\./, "");
+    return `${format.toUpperCase()} native decoder pending`;
+  }
+  return "image missing";
 }
 
 function selectedNode() {
@@ -3852,7 +4474,7 @@ function formatLayoutNumber(value) {
   return Number(number.toFixed(6));
 }
 
-async function saveWidgetBox(node, { position, size }) {
+async function saveWidgetBox(node, { position, size, props = null }) {
   setStatus("Saving box");
   const response = await fetch("/api/layout/box", {
     method: "POST",
@@ -3862,6 +4484,7 @@ async function saveWidgetBox(node, { position, size }) {
       widgetId: node.id,
       position,
       size,
+      props,
       project: els.projectRoot.value.trim() || null,
       width: state.data.viewport.width,
       height: state.data.viewport.height,
@@ -3899,6 +4522,9 @@ function renderError(message) {
   els.images.innerHTML = "";
   els.diagnostics.innerHTML = "";
   renderSourceControls();
+  renderLayoutDiagnostics();
+  renderLayoutModel();
+  renderLayoutConsole();
   ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
 }
 

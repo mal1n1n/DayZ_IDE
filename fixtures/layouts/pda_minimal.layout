@@ -3,7 +3,7 @@ FrameWidgetClass PDAFrame {
  size 1.000832 1.017749
  {
   FrameWidgetClass ItemSlot {
-   position 0.420076 0.402932
+   position 0.538318 0.273377
    size 0.163915 0.197702
    color 0.898 1 1 0.85
   }

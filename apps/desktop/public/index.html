@@ -3,127 +3,157 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DZUI Workbench</title>
+  <title>DayZ IDE</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <div id="setupOverlay" class="setupOverlay" hidden>
+    <section class="setupDialog" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+      <header>
+        <strong id="setupTitle">Initialize DayZ IDE</strong>
+        <span>Select the DayZ project assets root used by the editor.</span>
+      </header>
+      <label>
+        <span>DayZ Projects root</span>
+        <input id="setupProjectsRoot" autocomplete="off" spellcheck="false">
+      </label>
+      <div id="setupStatus" class="setupStatus"></div>
+      <div class="setupActions">
+        <button id="setupUseDefaults" type="button">Use Defaults</button>
+        <button id="setupSave" type="button">Initialize</button>
+      </div>
+    </section>
+  </div>
+
   <div class="app">
+    <nav class="navRail" aria-label="Workspace">
+      <div class="brandBlock">
+        <strong>DayZ IDE</strong>
+        <span>UI Editor</span>
+      </div>
+      <button class="navButton active" type="button" data-workspace-target="editor">Editor</button>
+      <button class="navButton" type="button" data-workspace-target="project">Project</button>
+      <button class="navButton" type="button" data-workspace-target="assets">Assets</button>
+      <button class="navButton" type="button" data-workspace-target="mcp">MCP</button>
+    </nav>
+
     <aside class="leftPane">
-      <header class="paneHeader">Project</header>
-      <form id="openForm" class="openForm">
-        <label>
-          <span>Layout file</span>
-          <input id="layoutPath" name="layoutPath" autocomplete="off" spellcheck="false" value="fixtures/layouts/pda_minimal.layout">
-        </label>
-        <label>
-          <span>Project root</span>
-          <input id="projectRoot" name="projectRoot" autocomplete="off" spellcheck="false" placeholder="Optional ClientMods root">
-        </label>
-        <label>
-          <span>Compare layout</span>
-          <input id="compareLayoutPath" name="compareLayoutPath" autocomplete="off" spellcheck="false" placeholder="Baseline .layout for structural diff">
-        </label>
-        <label>
-          <span>Patch file</span>
-          <input id="layoutPatchPath" name="layoutPatchPath" autocomplete="off" spellcheck="false" placeholder="Patch JSON for layout operations">
-        </label>
-        <label>
-          <span>Preview language</span>
-          <select id="previewLanguage" name="previewLanguage">
-            <option value="English">English</option>
-          </select>
-        </label>
-        <div class="sizeGrid">
+      <section class="workspacePanel active" data-workspace-panel="editor">
+        <header class="paneHeader">Open Layout</header>
+        <form id="openForm" class="openForm">
           <label>
-            <span>Width</span>
-            <input id="viewportWidth" name="viewportWidth" type="number" min="320" value="1280">
+            <span>Layout file</span>
+            <input id="layoutPath" name="layoutPath" autocomplete="off" spellcheck="false" value="fixtures/layouts/pda_minimal.layout">
           </label>
           <label>
-            <span>Height</span>
-            <input id="viewportHeight" name="viewportHeight" type="number" min="240" value="720">
+            <span>Project root</span>
+            <input id="projectRoot" name="projectRoot" autocomplete="off" spellcheck="false" placeholder="Optional ClientMods root">
           </label>
+          <label>
+            <span>Recent projects</span>
+            <select id="recentProjectRoot" name="recentProjectRoot">
+              <option value="">No recent projects</option>
+            </select>
+          </label>
+          <label>
+            <span>Preview language</span>
+            <select id="previewLanguage" name="previewLanguage">
+              <option value="English">English</option>
+            </select>
+          </label>
+          <div class="sizeGrid">
+            <label>
+              <span>Width</span>
+              <input id="viewportWidth" name="viewportWidth" type="number" min="320" value="1280">
+            </label>
+            <label>
+              <span>Height</span>
+              <input id="viewportHeight" name="viewportHeight" type="number" min="240" value="720">
+            </label>
+          </div>
+          <button type="submit">Open Layout</button>
+          <div class="actionGrid">
+            <button id="loadSettings" type="button">Load Settings</button>
+            <button id="saveSettings" type="button">Save Settings</button>
+          </div>
+        </form>
+        <header class="paneHeader">Layout Tree</header>
+        <div id="tree" class="tree"></div>
+      </section>
+
+      <section class="workspacePanel" data-workspace-panel="project">
+        <header class="paneHeader">Open Project</header>
+        <div class="toolPanel">
+          <label>
+            <span>Project folder</span>
+            <input id="projectBrowserRoot" autocomplete="off" spellcheck="false" placeholder="C:\Users\user\Documents\DayZ Projects">
+          </label>
+          <label>
+            <span>Recent projects</span>
+            <select id="recentProjectBrowserRoot">
+              <option value="">No recent projects</option>
+            </select>
+          </label>
+          <div class="projectToolbar">
+            <input id="projectFileSearch" autocomplete="off" spellcheck="false" placeholder="Search files">
+            <button id="openProjectFolder" type="button">Open</button>
+          </div>
+          <p id="projectFileCount" class="hintText">Open a project folder to browse files.</p>
+          <div id="projectFileTree" class="fileTree"></div>
         </div>
-        <div class="buildProfileGrid">
-          <label>
-            <span>Addon source</span>
-            <input id="addonSource" name="addonSource" autocomplete="off" spellcheck="false" placeholder="Optional addon folder">
-          </label>
-          <label>
-            <span>Build output</span>
-            <input id="buildOutput" name="buildOutput" autocomplete="off" spellcheck="false" placeholder=".dzui/build">
-          </label>
-          <label>
-            <span>PBO prefix</span>
-            <input id="buildPrefix" name="buildPrefix" autocomplete="off" spellcheck="false" placeholder="Auto">
-          </label>
-          <label>
-            <span>DayZ Tools root</span>
-            <input id="toolsRoot" name="toolsRoot" autocomplete="off" spellcheck="false" placeholder="C:\Program Files...\DayZ Tools">
-          </label>
-          <label>
-            <span>Workshop item ID</span>
-            <input id="workshopItemId" name="workshopItemId" autocomplete="off" spellcheck="false" placeholder="Existing Steam Workshop id">
-          </label>
-          <label>
-            <span>Workshop title</span>
-            <input id="workshopTitle" name="workshopTitle" autocomplete="off" spellcheck="false" placeholder="Optional metadata">
-          </label>
-          <label>
-            <span>Change note</span>
-            <input id="workshopChangeNote" name="workshopChangeNote" autocomplete="off" spellcheck="false" placeholder="Release notes for update">
-          </label>
-          <label>
-            <span>Content root</span>
-            <input id="workshopContentRoot" name="workshopContentRoot" autocomplete="off" spellcheck="false" placeholder="Folder passed to PublisherCmd /path">
-          </label>
-          <label>
-            <span>Preview image</span>
-            <input id="workshopPreviewImage" name="workshopPreviewImage" autocomplete="off" spellcheck="false" placeholder="Optional preview image">
-          </label>
-          <label>
-            <span>Publish command JSON</span>
-            <input id="workshopCommandJson" name="workshopCommandJson" autocomplete="off" spellcheck="false" placeholder="Optional command template">
-          </label>
-          <label>
-            <span>Engine geometry dump</span>
-            <input id="engineDumpPath" name="engineDumpPath" autocomplete="off" spellcheck="false" placeholder=".dzui/engine-preview/geometry.json">
-          </label>
-          <label>
-            <span>Expected screenshot</span>
-            <input id="expectedScreenshotPath" name="expectedScreenshotPath" autocomplete="off" spellcheck="false" placeholder=".dzui/engine-preview/dzui.png">
-          </label>
-          <label>
-            <span>Engine screenshot</span>
-            <input id="actualScreenshotPath" name="actualScreenshotPath" autocomplete="off" spellcheck="false" placeholder=".dzui/engine-preview/dayzdiag.png">
-          </label>
-          <label>
-            <span>Pixel diff output</span>
-            <input id="pixelDiffPath" name="pixelDiffPath" autocomplete="off" spellcheck="false" placeholder=".dzui/engine-preview/pixel-diff.png">
-          </label>
+      </section>
+
+      <section class="workspacePanel" data-workspace-panel="assets">
+        <header class="paneHeader">Asset Browser</header>
+        <div class="assetBrowserControls">
+          <input id="imageSearch" autocomplete="off" spellcheck="false" placeholder="Search images">
+          <button id="loadImages" type="button">Load</button>
         </div>
-        <button type="submit">Open</button>
-        <div class="actionGrid">
-          <button id="loadSettings" type="button">Load Settings</button>
-          <button id="saveSettings" type="button">Save Settings</button>
-          <button id="validateProject" type="button">Validate Project</button>
-          <button id="pluginSdk" type="button">Plugins</button>
-          <button id="toolchainReadiness" type="button">Readiness</button>
-          <button id="enginePlan" type="button">Engine Plan</button>
-          <button id="previewWorkspace" type="button">Preview Mod</button>
-          <button id="geometryDiff" type="button">Geometry Diff</button>
-          <button id="pixelDiff" type="button">Pixel Diff</button>
-          <button id="captureRun" type="button">Capture Run</button>
-          <button id="layoutDiff" type="button">Layout Diff</button>
-          <button id="patchGenerate" type="button">Generate Patch</button>
-          <button id="patchResolve" type="button">Resolve Patch</button>
-          <button id="patchDryRun" type="button">Patch Dry Run</button>
-          <button id="patchApply" type="button">Apply Patch</button>
-          <button id="buildPlan" type="button">Build Plan</button>
-          <button id="runBuild" type="button">Run Build</button>
-          <button id="workshopPlan" type="button">Workshop Plan</button>
-          <button id="workshopRun" type="button">Publish</button>
-          <button id="generateController" type="button">Controller</button>
+        <div id="assetBrowser" class="assetBrowser"></div>
+
+        <header class="paneHeader">Import Image</header>
+        <form id="imageImportForm" class="propertyForm">
+          <label>
+            <span>Source image</span>
+            <input id="imageSource" autocomplete="off" spellcheck="false" placeholder="C:\path\image.png">
+          </label>
+          <label>
+            <span>Asset path</span>
+            <input id="imageAssetPath" autocomplete="off" spellcheck="false" placeholder="gui/data/image.png">
+          </label>
+          <label>
+            <span>Imageset path</span>
+            <input id="imageSetPath" autocomplete="off" spellcheck="false" placeholder="gui/data/data.imageset">
+          </label>
+          <label>
+            <span>Image name</span>
+            <input id="imageName" autocomplete="off" spellcheck="false" placeholder="battery">
+          </label>
+          <button type="submit">Import Image</button>
+        </form>
+      </section>
+
+      <section class="workspacePanel" data-workspace-panel="mcp">
+        <header class="paneHeader">MCP Server</header>
+        <div class="mcpPanel">
+          <div class="mcpStatusLine">
+            <span id="mcpStateDot" class="stateDot"></span>
+            <strong id="mcpStatusText">Stopped</strong>
+          </div>
+          <label>
+            <span>HTTP port</span>
+            <input id="mcpPort" type="number" min="1" max="65535" step="1" value="8765">
+          </label>
+          <div class="actionGrid">
+            <button id="mcpStart" type="button">Start MCP</button>
+            <button id="mcpStop" type="button">Stop MCP</button>
+          </div>
+          <div id="mcpEndpoint" class="endpointBox">http://127.0.0.1:8765/mcp</div>
+          <p class="hintText">Use this endpoint in Codex MCP settings when porting Figma layouts into DayZ UI files.</p>
         </div>
+
+        <header class="paneHeader">Plugin Runtime</header>
         <div class="pluginTrustPanel">
           <label>
             <span>Plugin package</span>
@@ -156,33 +186,61 @@
             <input id="pluginCommandArgsJson" autocomplete="off" spellcheck="false" placeholder="{&quot;value&quot;:&quot;test&quot;}">
           </label>
           <div class="actionGrid">
+            <button id="pluginSdk" type="button">Plugins</button>
             <button id="pluginPackageSave" type="button">Save Package</button>
             <button id="pluginTrustInstall" type="button">Trust Key</button>
             <button id="pluginPackageVerify" type="button">Verify Trusted</button>
             <button id="pluginCommandRun" type="button">Run Command</button>
           </div>
         </div>
-      </form>
-      <header class="paneHeader">Layout Tree</header>
-      <div id="tree" class="tree"></div>
+      </section>
     </aside>
 
     <main class="centerPane">
-      <div class="topBar">
-        <div>
-          <strong id="title">No layout loaded</strong>
+      <div class="workbenchTop">
+        <div class="layoutTabBar">
+          <div class="layoutTab active">
+            <span class="layoutTabIcon">G</span>
+            <strong id="title">No layout loaded</strong>
+            <button class="layoutTabClose" type="button" title="Close layout" aria-label="Close layout">x</button>
+          </div>
           <span id="status" class="status">Idle</span>
         </div>
-        <div class="canvasTools" aria-label="Canvas tools">
-          <select id="previewState" aria-label="Preview state">
+        <div class="workbenchToolbar" aria-label="Preview toolbar">
+          <button id="workbenchGridIcon" class="toolIcon gridIcon active" type="button" title="Toggle grid" aria-label="Toggle grid"></button>
+          <button id="workbenchSnapIcon" class="toolIcon snapIcon" type="button" title="Toggle snap" aria-label="Toggle snap"></button>
+          <button class="toolIcon disabledIcon" type="button" title="Not implemented" aria-label="Not implemented" disabled></button>
+          <button class="toolIcon playIcon" type="button" title="Preview normal state" aria-label="Preview normal state"></button>
+          <button class="toolIcon stopIcon" type="button" title="Preview disabled state" aria-label="Preview disabled state"></button>
+          <button class="toolIcon colorIcon" type="button" title="Selection color" aria-label="Selection color"></button>
+          <button id="scaledPreview" class="toolButton active" type="button">Scaled</button>
+          <button id="gridSizeButton" class="toolButton" type="button">Grid Size</button>
+          <button id="snapMarginButton" class="toolButton" type="button">Snap Margin</button>
+          <button id="zoomButton" class="toolButton" type="button">Zoom: 100%</button>
+          <select id="previewResolution" class="resolutionSelect" aria-label="Preview resolution">
+            <option value="fit">FitToWindow</option>
+            <option value="800x600">800x600</option>
+            <option value="1280x720" selected>1280x720</option>
+            <option value="1280x800">1280x800</option>
+            <option value="1280x1024">1280x1024</option>
+            <option value="1360x768">1360x768</option>
+            <option value="1366x768">1366x768</option>
+            <option value="1440x900">1440x900</option>
+            <option value="1600x900">1600x900</option>
+            <option value="1680x1050">1680x1050</option>
+            <option value="1920x1080">1920x1080</option>
+            <option value="2560x1440">2560x1440</option>
+            <option value="3840x2160">3840x2160</option>
+          </select>
+          <select id="previewState" class="stateSelect" aria-label="Preview state">
             <option value="normal">normal</option>
             <option value="hover">hover</option>
             <option value="selected">selected</option>
             <option value="disabled">disabled</option>
           </select>
-          <label class="inlineToggle"><input id="showGrid" type="checkbox" checked> grid</label>
-          <label class="inlineToggle"><input id="snapToGrid" type="checkbox"> snap</label>
-          <input id="gridSize" type="number" min="1" step="1" value="8" aria-label="Grid size">
+          <input id="gridSize" class="hiddenToolInput" type="number" min="1" step="1" value="8" aria-label="Grid size">
+          <input id="showGrid" class="hiddenToolInput" type="checkbox" checked aria-label="Show grid">
+          <input id="snapToGrid" class="hiddenToolInput" type="checkbox" aria-label="Snap to grid">
           <span id="viewportBadge" class="badge">1280x720</span>
         </div>
       </div>
@@ -191,8 +249,13 @@
       </div>
       <section class="sourcePanel">
         <div class="sourceHeader">
-          <strong>Source</strong>
-          <div class="sourceActions">
+          <div class="dockTabs" role="tablist" aria-label="Layout diagnostics">
+            <button class="dockTab active" type="button" role="tab" aria-selected="true" data-dock-tab="source">Source</button>
+            <button class="dockTab" type="button" role="tab" aria-selected="false" data-dock-tab="console">Console <span id="layoutConsoleBadge" class="tabBadge">0</span></button>
+            <button class="dockTab" type="button" role="tab" aria-selected="false" data-dock-tab="diagnostics">Diagnostics</button>
+            <button class="dockTab" type="button" role="tab" aria-selected="false" data-dock-tab="model">Model</button>
+          </div>
+          <div class="sourceActions" data-dock-actions="source">
             <button id="refreshSource" type="button">Refresh</button>
             <button id="editSource" type="button">Edit</button>
             <button id="diffSource" type="button">Diff</button>
@@ -201,151 +264,163 @@
             <button id="undoEdit" type="button">Undo</button>
             <button id="redoEdit" type="button">Redo</button>
           </div>
+          <div class="sourceActions" data-dock-actions="console" hidden>
+            <button id="clearLayoutConsole" type="button">Clear</button>
+          </div>
         </div>
-        <textarea id="sourceView" spellcheck="false" readonly></textarea>
+        <div class="dockBody">
+          <div class="dockPane active" role="tabpanel" data-dock-panel="source">
+            <textarea id="sourceView" spellcheck="false" readonly></textarea>
+          </div>
+          <div id="layoutConsole" class="dockPane layoutConsole" role="tabpanel" data-dock-panel="console"></div>
+          <div id="layoutDiagnostics" class="dockPane layoutDiagnosticsPanel" role="tabpanel" data-dock-panel="diagnostics"></div>
+          <pre id="layoutModel" class="dockPane layoutModel" role="tabpanel" data-dock-panel="model"></pre>
+        </div>
       </section>
     </main>
 
     <aside class="rightPane">
-      <header class="paneHeader">Inspector</header>
-      <div id="details" class="details"></div>
-      <header class="paneHeader">Typed Properties</header>
-      <div id="typedProperties" class="typedProperties"></div>
-      <header class="paneHeader">Raw Property</header>
-      <form id="propertyForm" class="propertyForm">
-        <label>
-          <span>Key</span>
-          <input id="propertyKey" autocomplete="off" spellcheck="false" placeholder="text, position, size, image0">
-        </label>
-        <label>
-          <span>Values</span>
-          <input id="propertyValues" autocomplete="off" spellcheck="false" placeholder="Space-separated values">
-        </label>
-        <button type="submit">Save Property</button>
-      </form>
-      <header class="paneHeader">Images</header>
-      <div id="images" class="images"></div>
-      <header class="paneHeader">Asset Browser</header>
-      <div class="assetBrowserControls">
-        <input id="imageSearch" autocomplete="off" spellcheck="false" placeholder="Search images">
-        <button id="loadImages" type="button">Load</button>
-      </div>
-      <div id="assetBrowser" class="assetBrowser"></div>
-      <header class="paneHeader">Localization</header>
-      <form id="stringTableForm" class="propertyForm">
-        <label>
-          <span>Key</span>
-          <input id="stringKey" autocomplete="off" spellcheck="false" placeholder="STR_NEW_KEY">
-        </label>
-        <label>
-          <span>English</span>
-          <input id="stringEnglish" autocomplete="off" spellcheck="false" placeholder="Display text">
-        </label>
-        <button type="submit">Save String</button>
-      </form>
-      <div class="stringTableToolbar">
-        <button id="loadStringTable" type="button">Load Table</button>
-      </div>
-      <div id="stringTableGrid" class="stringTableGrid"></div>
-      <header class="paneHeader">Styles</header>
-      <form id="styleForm" class="propertyForm">
-        <label>
-          <span>Style file</span>
-          <input id="styleFilePath" autocomplete="off" spellcheck="false" placeholder="gui/styles/styles.styles">
-        </label>
-        <label>
-          <span>Style</span>
-          <input id="styleName" autocomplete="off" spellcheck="false" placeholder="Normal">
-        </label>
-        <label>
-          <span>Property</span>
-          <input id="styleKey" list="styleKeyOptions" autocomplete="off" spellcheck="false" placeholder="color">
-          <datalist id="styleKeyOptions"></datalist>
-        </label>
-        <label>
-          <span>Values</span>
-          <input id="styleValues" autocomplete="off" spellcheck="false" placeholder="1 1 1 1">
-        </label>
-        <div id="styleSchemaHint" class="schemaHint"></div>
-        <button type="submit">Save Style</button>
-      </form>
-      <div class="stringTableToolbar">
-        <button id="loadStyles" type="button">Load Styles</button>
-      </div>
-      <div id="styleList" class="styleList"></div>
-      <header class="paneHeader">Fonts</header>
-      <form id="fontImportForm" class="propertyForm">
-        <label>
-          <span>Source font</span>
-          <input id="fontSource" autocomplete="off" spellcheck="false" placeholder="C:\path\font.fnt">
-        </label>
-        <label>
-          <span>Font asset path</span>
-          <input id="fontAssetPath" autocomplete="off" spellcheck="false" placeholder="gui/fonts/font.fnt">
-        </label>
-        <label>
-          <span>Sample text</span>
-          <input id="fontSampleText" autocomplete="off" spellcheck="false" placeholder="Optional glyph check text">
-        </label>
-        <button type="submit">Import Font</button>
-      </form>
-      <div class="stringTableToolbar">
-        <button id="loadFonts" type="button">Load Fonts</button>
-        <button id="fontCoverage" type="button">Coverage</button>
-      </div>
-      <div id="fontList" class="fontList"></div>
-      <header class="paneHeader">Import Image</header>
-      <form id="imageImportForm" class="propertyForm">
-        <label>
-          <span>Source image</span>
-          <input id="imageSource" autocomplete="off" spellcheck="false" placeholder="C:\path\image.png">
-        </label>
-        <label>
-          <span>Asset path</span>
-          <input id="imageAssetPath" autocomplete="off" spellcheck="false" placeholder="gui/data/image.png">
-        </label>
-        <label>
-          <span>Imageset path</span>
-          <input id="imageSetPath" autocomplete="off" spellcheck="false" placeholder="gui/data/data.imageset">
-        </label>
-        <label>
-          <span>Image name</span>
-          <input id="imageName" autocomplete="off" spellcheck="false" placeholder="battery">
-        </label>
-        <button type="submit">Import Image</button>
-      </form>
-      <div class="atlasPackPanel">
-        <label>
-          <span>Atlas sources</span>
-          <textarea id="atlasSources" spellcheck="false" placeholder="One PNG path per line"></textarea>
-        </label>
-        <div class="atlasPackRow">
-          <input id="atlasMaxWidth" type="number" min="1" step="1" value="2048" aria-label="Atlas max width">
-          <input id="atlasPadding" type="number" min="0" step="1" value="2" aria-label="Atlas padding">
-          <label class="inlineToggle"><input id="atlasPowerOfTwo" type="checkbox"> pow2</label>
-          <button id="packAtlas" type="button">Pack Atlas</button>
+      <section class="workspacePanel active" data-workspace-panel="editor">
+        <header class="paneHeader">Inspector</header>
+        <div id="details" class="details"></div>
+        <header class="paneHeader">Typed Properties</header>
+        <div id="typedProperties" class="typedProperties"></div>
+        <header class="paneHeader">Raw Property</header>
+        <form id="propertyForm" class="propertyForm">
+          <label>
+            <span>Key</span>
+            <input id="propertyKey" autocomplete="off" spellcheck="false" placeholder="text, position, size, image0">
+          </label>
+          <label>
+            <span>Values</span>
+            <input id="propertyValues" autocomplete="off" spellcheck="false" placeholder="Space-separated values">
+          </label>
+          <button type="submit">Save Property</button>
+        </form>
+        <header class="paneHeader">Images</header>
+        <div id="images" class="images"></div>
+      </section>
+
+      <section class="workspacePanel" data-workspace-panel="project">
+        <header class="paneHeader">Layout Patch</header>
+        <div class="toolPanel">
+          <label>
+            <span>Compare layout</span>
+            <input id="compareLayoutPath" name="compareLayoutPath" autocomplete="off" spellcheck="false" placeholder="Baseline .layout for structural diff">
+          </label>
+          <label>
+            <span>Patch file</span>
+            <input id="layoutPatchPath" name="layoutPatchPath" autocomplete="off" spellcheck="false" placeholder="Patch JSON for layout operations">
+          </label>
+          <div class="actionGrid">
+            <button id="layoutDiff" type="button">Layout Diff</button>
+            <button id="patchGenerate" type="button">Generate Patch</button>
+            <button id="patchResolve" type="button">Resolve Patch</button>
+            <button id="patchDryRun" type="button">Patch Dry Run</button>
+            <button id="patchApply" type="button">Apply Patch</button>
+          </div>
         </div>
-      </div>
-      <div class="textureConvertPanel">
-        <label>
-          <span>Texture source</span>
-          <input id="textureSource" autocomplete="off" spellcheck="false" placeholder="C:\path\atlas.png">
-        </label>
-        <label>
-          <span>Texture output</span>
-          <input id="textureOutput" autocomplete="off" spellcheck="false" placeholder="C:\path\atlas.paa">
-        </label>
-        <div class="textureConvertRow">
-          <select id="textureFormat">
-            <option value="paa">PAA</option>
-            <option value="edds">EDDS custom</option>
-          </select>
-          <button id="textureConvertPlan" type="button">Plan Convert</button>
-          <button id="textureConvertRun" type="button">Run Convert</button>
+        <header class="paneHeader">Diagnostics</header>
+        <div class="diagnosticsMirror">Results are shown in the main diagnostics panel.</div>
+      </section>
+
+      <section class="workspacePanel" data-workspace-panel="assets">
+        <header class="paneHeader">Localization</header>
+        <form id="stringTableForm" class="propertyForm">
+          <label>
+            <span>Key</span>
+            <input id="stringKey" autocomplete="off" spellcheck="false" placeholder="STR_NEW_KEY">
+          </label>
+          <label>
+            <span>English</span>
+            <input id="stringEnglish" autocomplete="off" spellcheck="false" placeholder="Display text">
+          </label>
+          <button type="submit">Save String</button>
+        </form>
+        <div class="stringTableToolbar">
+          <button id="loadStringTable" type="button">Load Table</button>
         </div>
-      </div>
-      <header class="paneHeader">Diagnostics</header>
-      <div id="diagnostics" class="diagnostics"></div>
+        <div id="stringTableGrid" class="stringTableGrid"></div>
+
+        <header class="paneHeader">Styles</header>
+        <form id="styleForm" class="propertyForm">
+          <label>
+            <span>Style file</span>
+            <input id="styleFilePath" autocomplete="off" spellcheck="false" placeholder="gui/styles/styles.styles">
+          </label>
+          <label>
+            <span>Style</span>
+            <input id="styleName" autocomplete="off" spellcheck="false" placeholder="Normal">
+          </label>
+          <label>
+            <span>Property</span>
+            <input id="styleKey" list="styleKeyOptions" autocomplete="off" spellcheck="false" placeholder="color">
+            <datalist id="styleKeyOptions"></datalist>
+          </label>
+          <label>
+            <span>Values</span>
+            <input id="styleValues" autocomplete="off" spellcheck="false" placeholder="1 1 1 1">
+          </label>
+          <div id="styleSchemaHint" class="schemaHint"></div>
+          <button type="submit">Save Style</button>
+        </form>
+        <div class="stringTableToolbar">
+          <button id="loadStyles" type="button">Load Styles</button>
+        </div>
+        <div id="styleList" class="styleList"></div>
+
+        <header class="paneHeader">Fonts</header>
+        <form id="fontImportForm" class="propertyForm">
+          <label>
+            <span>Source font</span>
+            <input id="fontSource" autocomplete="off" spellcheck="false" placeholder="C:\path\font.fnt">
+          </label>
+          <label>
+            <span>Font asset path</span>
+            <input id="fontAssetPath" autocomplete="off" spellcheck="false" placeholder="gui/fonts/font.fnt">
+          </label>
+          <label>
+            <span>Sample text</span>
+            <input id="fontSampleText" autocomplete="off" spellcheck="false" placeholder="Optional glyph check text">
+          </label>
+          <button type="submit">Import Font</button>
+        </form>
+        <div class="stringTableToolbar">
+          <button id="loadFonts" type="button">Load Fonts</button>
+          <button id="fontCoverage" type="button">Coverage</button>
+        </div>
+        <div id="fontList" class="fontList"></div>
+
+        <header class="paneHeader">Atlas</header>
+        <div class="atlasPackPanel">
+          <label>
+            <span>Atlas sources</span>
+            <textarea id="atlasSources" spellcheck="false" placeholder="One PNG path per line"></textarea>
+          </label>
+          <div class="atlasPackRow">
+            <input id="atlasMaxWidth" type="number" min="1" step="1" value="2048" aria-label="Atlas max width">
+            <input id="atlasPadding" type="number" min="0" step="1" value="2" aria-label="Atlas padding">
+            <label class="inlineToggle"><input id="atlasPowerOfTwo" type="checkbox"> pow2</label>
+            <button id="packAtlas" type="button">Pack Atlas</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspacePanel" data-workspace-panel="mcp">
+        <header class="paneHeader">Codex Connection</header>
+        <div class="mcpGuide">
+          <strong>HTTP endpoint</strong>
+          <code id="mcpEndpointCopy">http://127.0.0.1:8765/mcp</code>
+          <span>Start the server, then add this URL as an MCP HTTP server in Codex.</span>
+        </div>
+        <header class="paneHeader">MCP Logs</header>
+        <pre id="mcpLogs" class="mcpLogs">No MCP process started.</pre>
+      </section>
+
+      <section class="globalDiagnostics">
+        <header class="paneHeader">Diagnostics</header>
+        <div id="diagnostics" class="diagnostics"></div>
+      </section>
     </aside>
   </div>
 

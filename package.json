@@ -1,29 +1,16 @@
 {
   "name": "dzui",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.7",
   "type": "module",
+  "main": "apps/electron/src/main.mjs",
   "scripts": {
     "test": "node --test packages/core/test/*.test.mjs packages/mcp-server/test/*.test.mjs",
     "parse": "node packages/core/src/cli/dzui.mjs parse",
     "inspect": "node packages/core/src/cli/dzui.mjs inspect",
     "preview": "node packages/core/src/cli/dzui.mjs preview",
     "decode": "node packages/core/src/cli/dzui.mjs decode",
-    "texture-convert-plan": "node packages/core/src/cli/dzui.mjs texture-convert-plan",
-    "texture-convert-run": "node packages/core/src/cli/dzui.mjs texture-convert-run",
     "validate-project": "node packages/core/src/cli/dzui.mjs validate-project",
-    "toolchain-readiness": "node packages/core/src/cli/dzui.mjs toolchain-readiness",
-    "engine-plan": "node packages/core/src/cli/dzui.mjs engine-plan",
-    "engine-launch-plan": "node packages/core/src/cli/dzui.mjs engine-launch-plan",
-    "engine-preview-generate": "node packages/core/src/cli/dzui.mjs engine-preview-generate",
-    "engine-geometry-diff": "node packages/core/src/cli/dzui.mjs engine-geometry-diff",
-    "engine-pixel-diff": "node packages/core/src/cli/dzui.mjs engine-pixel-diff",
-    "engine-capture-plan": "node packages/core/src/cli/dzui.mjs engine-capture-plan",
-    "engine-capture-run": "node packages/core/src/cli/dzui.mjs engine-capture-run",
-    "build-plan": "node packages/core/src/cli/dzui.mjs build-plan",
-    "build-run": "node packages/core/src/cli/dzui.mjs build-run",
-    "workshop-plan": "node packages/core/src/cli/dzui.mjs workshop-plan",
-    "workshop-run": "node packages/core/src/cli/dzui.mjs workshop-run",
     "settings-get": "node packages/core/src/cli/dzui.mjs settings-get",
     "settings-set": "node packages/core/src/cli/dzui.mjs settings-set",
     "plugins": "node packages/core/src/cli/dzui.mjs plugins",
@@ -53,10 +40,41 @@
     "image-import": "node packages/core/src/cli/dzui.mjs image-import",
     "atlas-pack": "node packages/core/src/cli/dzui.mjs atlas-pack",
     "dev": "node apps/desktop/src/server.mjs",
+    "electron": "electron apps/electron/src/main.mjs",
+    "electron:dev": "electron apps/electron/src/main.mjs",
+    "electron:pack": "electron-builder --dir",
+    "electron:dist": "electron-builder --win nsis portable",
     "shell": "node apps/desktop/src/server.mjs",
     "mcp": "node packages/mcp-server/src/server.mjs",
     "mcp:http": "node packages/mcp-server/src/server.mjs --http --host 127.0.0.1 --port 8765",
     "scan:clientmods": "node packages/core/src/cli/dzui-scan.mjs E:\\PycharmProjects\\MGStalker\\src\\ClientMods",
     "scan": "node packages/core/src/cli/dzui-scan.mjs"
+  },
+  "devDependencies": {
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.dzui.dayzide",
+    "productName": "DayZ IDE",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "apps/**/*",
+      "build/**/*",
+      "packages/**/*",
+      "fixtures/**/*",
+      "package.json",
+      "README.md"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    }
   }
 }

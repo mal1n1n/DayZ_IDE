@@ -68,11 +68,43 @@ export function decodeDdsRgba(buffer) {
   const rowBytes = width * bytesPerPixel;
   const sourcePitch = pitch >= rowBytes ? pitch : rowBytes;
   const dataOffset = 128;
+  const chunked = decodeChunkedDdsBaseMip(buffer, {
+    width,
+    height,
+    mipMapCount: buffer.readUInt32LE(28),
+    bytesPerPixel,
+  });
+  if (chunked) {
+    return decodeUncompressedDdsPixels(chunked, {
+      width,
+      height,
+      sourcePitch: rowBytes,
+      rMask,
+      gMask,
+      bMask,
+      aMask,
+      format: "chunked-32bpp",
+    });
+  }
+
   const requiredBytes = dataOffset + (sourcePitch * height);
   if (buffer.length < requiredBytes) {
     throw new Error("DDS pixel data is truncated.");
   }
 
+  return decodeUncompressedDdsPixels(buffer.subarray(dataOffset, dataOffset + (sourcePitch * height)), {
+    width,
+    height,
+    sourcePitch,
+    rMask,
+    gMask,
+    bMask,
+    aMask,
+    format: "32bpp",
+  });
+}
+
+function decodeUncompressedDdsPixels(pixelData, { width, height, sourcePitch, rMask, gMask, bMask, aMask, format }) {
   const masks = {
     r: createMaskReader(rMask || 0x00ff0000),
     g: createMaskReader(gMask || 0x0000ff00),
@@ -83,8 +115,8 @@ export function decodeDdsRgba(buffer) {
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const sourceOffset = dataOffset + (y * sourcePitch) + (x * bytesPerPixel);
-      const pixel = buffer.readUInt32LE(sourceOffset);
+      const sourceOffset = (y * sourcePitch) + (x * 4);
+      const pixel = pixelData.readUInt32LE(sourceOffset);
       const targetOffset = ((y * width) + x) * 4;
       rgba[targetOffset] = masks.r(pixel);
       rgba[targetOffset + 1] = masks.g(pixel);
@@ -93,7 +125,221 @@ export function decodeDdsRgba(buffer) {
     }
   }
 
-  return { width, height, rgba, format: "32bpp" };
+  if (format === "chunked-32bpp") {
+    suppressTransparentRgbBleed(rgba);
+  }
+  return { width, height, rgba, format };
+}
+
+function suppressTransparentRgbBleed(rgba) {
+  const pixelCount = rgba.length / 4;
+  if (pixelCount < 10000) return;
+  let lowAlpha = 0;
+  let brightLowAlpha = 0;
+  let opaque = 0;
+  for (let offset = 0; offset < rgba.length; offset += 4) {
+    const alpha = rgba[offset + 3];
+    if (alpha <= 32) {
+      lowAlpha += 1;
+      if (Math.max(rgba[offset], rgba[offset + 1], rgba[offset + 2]) > 64) {
+        brightLowAlpha += 1;
+      }
+    }
+    if (alpha > 220) opaque += 1;
+  }
+  if (
+    lowAlpha / pixelCount < 0.8
+    || brightLowAlpha / Math.max(1, lowAlpha) > 0.06
+    || opaque / pixelCount < 0.02
+  ) {
+    return;
+  }
+  for (let offset = 0; offset < rgba.length; offset += 4) {
+    if (rgba[offset + 3] > 32) continue;
+    rgba[offset] = 0;
+    rgba[offset + 1] = 0;
+    rgba[offset + 2] = 0;
+  }
+}
+
+function decodeChunkedDdsBaseMip(buffer, { width, height, mipMapCount, bytesPerPixel }) {
+  if (!Number.isInteger(mipMapCount) || mipMapCount <= 0) return null;
+  const tableOffset = 128;
+  const tableBytes = mipMapCount * 8;
+  if (buffer.length < tableOffset + tableBytes) return null;
+
+  const descriptors = [];
+  let payloadOffset = tableOffset + tableBytes;
+  for (let index = 0; index < mipMapCount; index += 1) {
+    const offset = tableOffset + (index * 8);
+    const kind = buffer.toString("ascii", offset, offset + 4);
+    const byteLength = buffer.readUInt32LE(offset + 4);
+    if (kind !== "COPY" && kind !== "LZ4 ") return null;
+    if (byteLength < 0 || payloadOffset + byteLength > buffer.length) return null;
+    descriptors.push({
+      kind,
+      byteLength,
+      payloadOffset,
+    });
+    payloadOffset += byteLength;
+  }
+
+  const mipSizes = mipDimensions(width, height, mipMapCount).reverse();
+  const decodedMips = [];
+  let dictionary = Buffer.alloc(0);
+  for (let index = 0; index < descriptors.length; index += 1) {
+    const descriptor = descriptors[index];
+    const mip = mipSizes[index];
+    if (!descriptor || !mip) return null;
+    const expectedBytes = mip.width * mip.height * bytesPerPixel;
+    const payload = buffer.subarray(descriptor.payloadOffset, descriptor.payloadOffset + descriptor.byteLength);
+    let decoded;
+    if (descriptor.kind === "COPY") {
+      if (payload.length < expectedBytes) return null;
+      decoded = payload.subarray(0, expectedBytes);
+    } else {
+      decoded = decodeEnfusionLz4Payload(payload, expectedBytes, dictionary);
+    }
+    decodedMips.push(decoded);
+    dictionary = Buffer.concat([dictionary, decoded]);
+  }
+
+  const baseMip = mipSizes[descriptors.length - 1];
+  if (!baseMip || baseMip.width !== width || baseMip.height !== height) return null;
+  return decodedMips[decodedMips.length - 1] ?? null;
+}
+
+function decodeEnfusionLz4Payload(payload, expectedBytes, dictionary = Buffer.alloc(0)) {
+  if (payload.length >= 8 && payload.readUInt32LE(0) === expectedBytes) {
+    const storedCompressedBytes = payload.readUInt32LE(4) & 0x7fffffff;
+    if (storedCompressedBytes === payload.length - 8) {
+      return decodeLz4Block(payload.subarray(8), expectedBytes, dictionary);
+    }
+    const output = Buffer.alloc(expectedBytes);
+    let decodedBytes = 0;
+    let offset = 4;
+    while (offset < payload.length) {
+      if (offset + 4 > payload.length) throw new Error("LZ4 block size is truncated.");
+      const rawBlockBytes = payload.readUInt32LE(offset);
+      const compressedBytes = rawBlockBytes & 0x7fffffff;
+      const compressed = Boolean(rawBlockBytes & 0x80000000);
+      offset += 4;
+      if (compressedBytes <= 0 || offset + compressedBytes > payload.length) {
+        throw new Error("LZ4 block data is truncated.");
+      }
+      const expectedBlockBytes = Math.min(0x10000, expectedBytes - decodedBytes);
+      if (compressed) {
+        const written = decodeLz4BlockInto(
+          payload.subarray(offset, offset + compressedBytes),
+          output,
+          decodedBytes,
+          dictionary,
+        );
+        if (written !== expectedBlockBytes) {
+          throw new Error("LZ4 block output size did not match expected chunk size.");
+        }
+        decodedBytes += written;
+      } else {
+        const block = payload.subarray(offset, offset + compressedBytes);
+        const trialOutput = Buffer.from(output);
+        try {
+          const written = decodeLz4BlockInto(block, trialOutput, decodedBytes, dictionary);
+          if (written !== expectedBlockBytes) {
+            throw new Error("LZ4 trial block output size did not match expected chunk size.");
+          }
+          trialOutput.copy(output);
+          decodedBytes += written;
+        } catch {
+          if (decodedBytes + compressedBytes > expectedBytes) {
+            throw new Error("LZ4 raw block data exceeds expected output size.");
+          }
+          block.copy(output, decodedBytes);
+          decodedBytes += compressedBytes;
+        }
+      }
+      offset += compressedBytes;
+    }
+    if (decodedBytes === expectedBytes) return output;
+    if (decodedBytes > 0) throw new Error("LZ4 output size did not match expected DDS mip size.");
+  }
+  return decodeLz4Block(payload, expectedBytes, dictionary);
+}
+
+function mipDimensions(width, height, count) {
+  const result = [];
+  let currentWidth = width;
+  let currentHeight = height;
+  for (let index = 0; index < count; index += 1) {
+    result.push({ width: currentWidth, height: currentHeight });
+    currentWidth = Math.max(1, Math.floor(currentWidth / 2));
+    currentHeight = Math.max(1, Math.floor(currentHeight / 2));
+  }
+  return result;
+}
+
+function decodeLz4Block(input, expectedBytes, dictionary = Buffer.alloc(0)) {
+  const output = Buffer.alloc(expectedBytes);
+  const written = decodeLz4BlockInto(input, output, 0, dictionary);
+  if (written !== expectedBytes) throw new Error("LZ4 output size did not match expected DDS mip size.");
+  return output;
+}
+
+function decodeLz4BlockInto(input, output, targetStart, dictionary = Buffer.alloc(0)) {
+  let source = 0;
+  let target = targetStart;
+
+  while (source < input.length && target < output.length) {
+    const token = input[source++];
+    let literalLength = token >>> 4;
+    if (literalLength === 15) {
+      let value;
+      do {
+        if (source >= input.length) throw new Error("LZ4 literal length is truncated.");
+        value = input[source++];
+        literalLength += value;
+      } while (value === 255);
+    }
+
+    if (source + literalLength > input.length) throw new Error("LZ4 literal data is truncated.");
+    if (target + literalLength > output.length) throw new Error("LZ4 literal data exceeds expected output size.");
+    input.copy(output, target, source, source + literalLength);
+    source += literalLength;
+    target += literalLength;
+
+    if (source >= input.length) break;
+    if (source + 2 > input.length) throw new Error("LZ4 match offset is truncated.");
+    const offset = input[source] | (input[source + 1] << 8);
+    source += 2;
+    if (offset <= 0) throw new Error("LZ4 match offset is invalid.");
+
+    let matchLength = token & 0x0f;
+    if (matchLength === 15) {
+      let value;
+      do {
+        if (source >= input.length) throw new Error("LZ4 match length is truncated.");
+        value = input[source++];
+        matchLength += value;
+      } while (value === 255);
+    }
+    matchLength += 4;
+
+    if (target + matchLength > output.length) throw new Error("LZ4 match data exceeds expected output size.");
+    for (let index = 0; index < matchLength; index += 1) {
+      const matchSource = target - offset;
+      if (matchSource >= 0) {
+        output[target] = output[matchSource];
+      } else {
+        const dictionaryIndex = dictionary.length + matchSource;
+        if (dictionaryIndex < 0 || dictionaryIndex >= dictionary.length) {
+          throw new Error("LZ4 match offset is invalid.");
+        }
+        output[target] = dictionary[dictionaryIndex];
+      }
+      target += 1;
+    }
+  }
+
+  return target - targetStart;
 }
 
 function decodeCompressedDdsRgba(buffer, { width, height, fourCc, dataOffset = 128 }) {

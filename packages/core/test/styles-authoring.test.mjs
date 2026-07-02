@@ -193,15 +193,124 @@ test("preview applies style layout, state, image, and color metadata", () => {
   assert.ok(node.stylePreview.appliedProperties.includes("image"));
 });
 
+test("parseStyleFile extracts Workbench XML widget styles with state items", () => {
+  const parsed = parseStyleFile(`<WidgetStyles>
+ <Widget Name="ButtonWidget">
+  <Style Name="MGS_button2" ImageSet="elements_img" Font="gui/fonts/metron.font" Color="0xFFFFFFFF">
+   <State Name="Normal">
+    <Item Name="LeftTop" Image="4LeftTop" />
+    <Item Name="Center" Image="4Center" />
+   </State>
+  </Style>
+ </Widget>
+ <Widget Name="CheckBoxWidget">
+  <Style Name="Default" ImageSet="checkbox_gui">
+   <State Name="Normal">
+    <Item Name="CheckBox" Image="cb" />
+   </State>
+  </Style>
+ </Widget>
+</WidgetStyles>`);
+
+  assert.equal(parsed.styles.length, 2);
+  const button = parsed.styles.find((style) => style.widgetType === "ButtonWidget");
+  assert.equal(button.name, "MGS_button2");
+  assert.equal(button.props.find((prop) => prop.key === "imageset").values[0], "elements_img");
+  assert.equal(button.xmlStyle.states[0].items[1].image, "4Center");
+});
+
+test("preview resolves XML style by widget type and emits style render refs", () => {
+  const styles = parseStyleFile(`<WidgetStyles>
+ <Widget Name="ButtonWidget">
+  <Style Name="Default" ImageSet="button_set">
+   <State Name="Normal">
+    <Item Name="LeftTop" Image="btn_lt" />
+    <Item Name="Center" Image="btn_c" />
+   </State>
+  </Style>
+ </Widget>
+ <Widget Name="CheckBoxWidget">
+  <Style Name="Default" ImageSet="checkbox_set">
+   <State Name="Normal">
+    <Item Name="CheckBox" Image="cb" />
+   </State>
+  </Style>
+ </Widget>
+</WidgetStyles>`);
+  const styleRegistry = registryFromParsed(styles);
+  const document = parseLayout(`PanelWidgetClass Root {
+ {
+  ButtonWidgetClass Action {
+   style Default
+  }
+  CheckBoxWidgetClass Toggle {
+   style Default
+  }
+ }
+}`);
+
+  const model = buildLayoutPreviewModel(document, { styleRegistry });
+  const button = model.nodes.find((node) => node.name === "Action");
+  const checkbox = model.nodes.find((node) => node.name === "Toggle");
+
+  assert.equal(button.styleRender.imageSet, "button_set");
+  assert.deepEqual(button.styleRender.items.map((item) => item.ref), [
+    "set:button_set image:btn_lt",
+    "set:button_set image:btn_c",
+  ]);
+  assert.equal(checkbox.styleRender.imageSet, "checkbox_set");
+  assert.equal(checkbox.styleRender.items[0].ref, "set:checkbox_set image:cb");
+});
+
+test("preview consumes style exact layout flags and priority", () => {
+  const styles = parseStyleFile(`StyleClass PixelBox {
+ position 10 20
+ size 30 40
+ hexactpos 1
+ vexactpos 1
+ hexactsize 1
+ vexactsize 1
+ priority 7
+}
+`);
+  const styleRegistry = registryFromParsed(styles);
+  const document = parseLayout(`PanelWidgetClass Box {
+ style PixelBox
+}
+`);
+
+  const model = buildLayoutPreviewModel(document, {
+    width: 100,
+    height: 100,
+    styleRegistry,
+  });
+  const node = model.nodes[0];
+
+  assertBoxClose(node.box, { x: 10, y: 20, width: 30, height: 40 });
+  assert.equal(node.box.exact.positionX, true);
+  assert.equal(node.box.exact.positionY, true);
+  assert.equal(node.box.exact.sizeX, true);
+  assert.equal(node.box.exact.sizeY, true);
+  assert.equal(node.priority, 7);
+  assert.ok(node.stylePreview.appliedProperties.includes("exact"));
+});
+
 function registryFromParsed(parsed) {
   const byName = new Map(parsed.styles.map((style) => [style.name.toLowerCase(), style]));
+  const byWidgetAndName = new Map(parsed.styles
+    .filter((style) => style.widgetType)
+    .map((style) => [`${style.widgetType.toLowerCase()}:${style.name.toLowerCase()}`, style]));
   return {
     byName,
-    has(name) {
-      return byName.has(String(name).toLowerCase());
+    byWidgetAndName,
+    has(name, lookup = {}) {
+      return Boolean(this.get(name, lookup));
     },
-    get(name) {
-      return byName.get(String(name).toLowerCase()) ?? null;
+    get(name, lookup = {}) {
+      const widgetType = typeof lookup === "string" ? lookup : lookup?.widgetType;
+      return (widgetType ? byWidgetAndName.get(`${String(widgetType).replace(/Class$/i, "").toLowerCase()}:${String(name).toLowerCase()}`) : null)
+        ?? byName.get(String(name).toLowerCase())
+        ?? null;
     },
   };
 }

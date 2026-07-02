@@ -1,4 +1,5 @@
 import { parseLayout } from "./parser.mjs";
+import { defaultPropsForWidgetType } from "./widget-palette.mjs";
 
 export function createWidget(source, request) {
   const document = request.document ?? parseLayout(source, { filePath: request.filePath ?? null });
@@ -399,12 +400,16 @@ function mergeDefaultProps(typeClass, props) {
   if (props === undefined || props === null) return defaultWidgetProps(typeClass);
   if (Array.isArray(props)) return props;
   return {
-    ...defaultWidgetProps(typeClass),
+    ...minimalDefaultWidgetProps(typeClass),
     ...props,
   };
 }
 
 function defaultWidgetProps(typeClass) {
+  return defaultPropsForWidgetType(typeClass);
+}
+
+function minimalDefaultWidgetProps(typeClass) {
   const lower = String(typeClass).toLowerCase();
   if (lower.includes("text")) {
     return {

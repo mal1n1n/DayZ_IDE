@@ -40,11 +40,12 @@ export function buildLayoutPreviewModel(document, options = {}) {
 
 function appendNode(node, context) {
   const styleName = readStringProp(node, "style", null);
+  const widgetType = normalizeWidgetType(node.typeClass);
   const resolvedStyle = styleName && context.styleRegistry
-    ? resolveStyleInheritance(context.styleRegistry, styleName)
+    ? resolveStyleInheritance(context.styleRegistry, styleName, { widgetType })
     : null;
-  const stylePreview = buildStylePreview(resolvedStyle);
-  const box = computeBox(node, context.parentBox, { stylePreview });
+  const stylePreview = buildStylePreview(resolvedStyle, context.previewState);
+  const box = context.boxOverride ?? computeBox(node, context.parentBox, { stylePreview });
   const rawText = readStringProp(node, "text", null);
   const explicitColor = readNumberListProp(node, "color", null);
   const color = explicitColor ?? stylePreview?.textColor ?? stylePreview?.color ?? null;
@@ -77,17 +78,20 @@ function appendNode(node, context) {
     typedProperties: describeWidgetProperties(node),
     visible: readBooleanProp(node, "visible", stylePreview?.visible ?? true),
     ignorePointer: readBooleanProp(node, "ignorepointer", stylePreview?.ignorePointer ?? false),
-    priority: readNumberProp(node, "priority", 0),
+    priority: readNumberProp(node, "priority", stylePreview?.priority ?? 0),
     style: styleName,
     stylePreview,
+    styleRender: buildStyleRender(node, stylePreview, context.projectIndex, context.previewState, widgetType),
     styleResolved: resolvedStyle ? {
       ok: resolvedStyle.ok,
       chain: resolvedStyle.chain,
       diagnostics: resolvedStyle.diagnostics,
       properties: resolvedStyle.properties,
+      xmlStyle: resolvedStyle.xmlStyle,
     } : null,
     text: rawText ? localizeStringValue(rawText, context.projectIndex?.stringTable, context.language) : null,
     textRaw: rawText,
+    textLayout: buildTextLayout(node),
     language: context.language,
     font: readStringProp(node, "font", null) ?? stylePreview?.font ?? null,
     color,
@@ -106,10 +110,12 @@ function appendNode(node, context) {
   };
   context.nodes.push(previewNode);
 
+  const childBoxOverrides = buildSpacerChildBoxOverrides(node, box, context);
   for (const [index, child] of node.children.entries()) {
     appendNode(child, {
       ...context,
       parentBox: box,
+      boxOverride: childBoxOverrides?.get(child) ?? null,
       path: `${context.path}/${child.name || child.typeClass}:${index}`,
       parentId: context.path,
       depth: context.depth + 1,
@@ -121,10 +127,10 @@ export function computeBox(node, parentBox, options = {}) {
   const stylePreview = options.stylePreview ?? null;
   const position = readNumberListProp(node, "position", stylePreview?.position ?? [0, 0]);
   const size = readNumberListProp(node, "size", stylePreview?.size ?? [1, 1]);
-  const exactPosX = readBooleanProp(node, "hexactpos", false);
-  const exactPosY = readBooleanProp(node, "vexactpos", false);
-  const exactSizeX = readBooleanProp(node, "hexactsize", false);
-  const exactSizeY = readBooleanProp(node, "vexactsize", false);
+  const exactPosX = readBooleanProp(node, "hexactpos", stylePreview?.exact?.positionX ?? false);
+  const exactPosY = readBooleanProp(node, "vexactpos", stylePreview?.exact?.positionY ?? false);
+  const exactSizeX = readBooleanProp(node, "hexactsize", stylePreview?.exact?.sizeX ?? false);
+  const exactSizeY = readBooleanProp(node, "vexactsize", stylePreview?.exact?.sizeY ?? false);
   const halign = normalizeAlign(readStringProp(node, "halign", stylePreview?.halign ?? "left"));
   const valign = normalizeAlign(readStringProp(node, "valign", stylePreview?.valign ?? "top"));
 
@@ -243,8 +249,9 @@ function readStyleBooleanProp(resolvedStyle, key, fallback) {
   return fallback;
 }
 
-function buildStylePreview(resolvedStyle) {
+function buildStylePreview(resolvedStyle, previewState = "normal") {
   if (!resolvedStyle?.exists) return null;
+  const xmlStyle = resolvedStyle.xmlStyle ?? null;
   const preview = {
     font: readStyleStringProp(resolvedStyle, "font", null),
     color: readStyleNumberListProp(resolvedStyle, "color", null),
@@ -257,11 +264,21 @@ function buildStylePreview(resolvedStyle) {
     alpha: readStyleNumberProp(resolvedStyle, "alpha", null),
     visible: readStyleBooleanProp(resolvedStyle, "visible", null),
     ignorePointer: readStyleBooleanProp(resolvedStyle, "ignorepointer", null),
+    priority: readStyleNumberProp(resolvedStyle, "priority", null),
     position: readStyleNumberListProp(resolvedStyle, "position", null),
     size: readStyleNumberListProp(resolvedStyle, "size", null),
+    exact: {
+      positionX: readStyleBooleanProp(resolvedStyle, "hexactpos", null),
+      positionY: readStyleBooleanProp(resolvedStyle, "vexactpos", null),
+      sizeX: readStyleBooleanProp(resolvedStyle, "hexactsize", null),
+      sizeY: readStyleBooleanProp(resolvedStyle, "vexactsize", null),
+    },
     halign: readStyleStringProp(resolvedStyle, "halign", null),
     valign: readStyleStringProp(resolvedStyle, "valign", null),
     image: readStyleStringProp(resolvedStyle, "image", null),
+    imageSet: readStyleStringProp(resolvedStyle, "imageset", null) ?? xmlStyle?.imageSet ?? null,
+    xmlStyle,
+    stateItems: selectXmlStyleItems(xmlStyle, previewState),
   };
   preview.stateColors = {
     normal: preview.textColor ?? preview.color,
@@ -271,8 +288,191 @@ function buildStylePreview(resolvedStyle) {
   };
   preview.appliedProperties = Object.entries(preview)
     .filter(([key, value]) => key !== "stateColors" && key !== "appliedProperties" && value !== null && value !== undefined)
-    .map(([key]) => key);
+    .flatMap(([key, value]) => {
+      if (key !== "exact") return [key];
+      return Object.values(value).some((entry) => entry !== null && entry !== undefined) ? [key] : [];
+    })
   return preview;
+}
+
+function buildTextLayout(node) {
+  return {
+    exact: readBooleanProp(node, "exact text", false),
+    exactSize: readNumberProp(node, "exact text size", null),
+    bold: readBooleanProp(node, "bold text", false),
+    halign: normalizeAlign(readStringProp(node, "text halign", "left")),
+    valign: normalizeAlign(readStringProp(node, "text valign", "center")),
+    wrap: readBooleanProp(node, "wrap", false),
+  };
+}
+
+function buildSpacerChildBoxOverrides(node, box, context) {
+  if (!isSpacerWidget(node) || node.children.length === 0) return null;
+  const visibleChildren = node.children.filter((child) => readBooleanProp(child, "visible", true) !== false);
+  if (visibleChildren.length === 0) return null;
+
+  const padding = readNumberProp(node, "Padding", 0);
+  const margin = readNumberProp(node, "Margin", 0);
+  const contentHalign = normalizeAlign(readStringProp(node, "content_halign", "left"));
+  const contentValign = normalizeAlign(readStringProp(node, "content_valign", "top"));
+  const area = {
+    x: box.x + padding,
+    y: box.y + padding,
+    width: Math.max(0, box.width - (padding * 2)),
+    height: Math.max(0, box.height - (padding * 2)),
+  };
+  const naturalBoxes = visibleChildren.map((child) => computeBox(child, box, {
+    stylePreview: getNodeStylePreview(child, context.styleRegistry),
+  }));
+
+  let rows = Math.max(0, Math.trunc(readNumberProp(node, "Rows", 0)));
+  let columns = Math.max(0, Math.trunc(readNumberProp(node, "Columns", 0)));
+  if (rows === 1 && columns === 0) columns = visibleChildren.length;
+  if (columns === 1 && rows === 0) rows = visibleChildren.length;
+  if (rows === 0 && columns === 0) {
+    columns = node.typeClass === "WrapSpacerWidgetClass" ? visibleChildren.length : 1;
+    rows = Math.ceil(visibleChildren.length / columns);
+  } else if (rows === 0) {
+    rows = Math.ceil(visibleChildren.length / columns);
+  } else if (columns === 0) {
+    columns = Math.ceil(visibleChildren.length / rows);
+  }
+
+  const overrides = new Map();
+  if (rows === 1) {
+    const totalWidth = naturalBoxes.reduce((sum, childBox) => sum + childBox.width, 0) + (margin * Math.max(0, naturalBoxes.length - 1));
+    const maxHeight = Math.max(...naturalBoxes.map((childBox) => childBox.height));
+    let cursorX = alignContentAxis(area.x, area.width, totalWidth, contentHalign, "x");
+    const groupY = alignContentAxis(area.y, area.height, maxHeight, contentValign, "y");
+    visibleChildren.forEach((child, index) => {
+      const childBox = naturalBoxes[index];
+      const height = childBox.exact.sizeY ? childBox.height : area.height;
+      overrides.set(child, {
+        ...childBox,
+        height,
+        x: cursorX,
+        y: alignContentAxis(groupY, maxHeight, height, contentValign, "y"),
+      });
+      cursorX += childBox.width + margin;
+    });
+    return overrides;
+  }
+
+  if (columns === 1) {
+    const totalHeight = naturalBoxes.reduce((sum, childBox) => sum + childBox.height, 0) + (margin * Math.max(0, naturalBoxes.length - 1));
+    const maxWidth = Math.max(...naturalBoxes.map((childBox) => childBox.width));
+    const groupX = alignContentAxis(area.x, area.width, maxWidth, contentHalign, "x");
+    let cursorY = alignContentAxis(area.y, area.height, totalHeight, contentValign, "y");
+    visibleChildren.forEach((child, index) => {
+      const childBox = naturalBoxes[index];
+      const width = childBox.exact.sizeX ? childBox.width : area.width;
+      overrides.set(child, {
+        ...childBox,
+        width,
+        x: alignContentAxis(groupX, maxWidth, width, contentHalign, "x"),
+        y: cursorY,
+      });
+      cursorY += childBox.height + margin;
+    });
+    return overrides;
+  }
+
+  const cellWidth = Math.max(0, (area.width - (margin * Math.max(0, columns - 1))) / columns);
+  const cellHeight = Math.max(0, (area.height - (margin * Math.max(0, rows - 1))) / rows);
+  visibleChildren.forEach((child, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    const childBox = naturalBoxes[index];
+    const cell = {
+      x: area.x + (column * (cellWidth + margin)),
+      y: area.y + (row * (cellHeight + margin)),
+      width: cellWidth,
+      height: cellHeight,
+    };
+    overrides.set(child, {
+      ...childBox,
+      width: childBox.exact.sizeX ? childBox.width : cell.width,
+      height: childBox.exact.sizeY ? childBox.height : cell.height,
+      x: alignContentAxis(cell.x, cell.width, childBox.exact.sizeX ? childBox.width : cell.width, contentHalign, "x"),
+      y: alignContentAxis(cell.y, cell.height, childBox.exact.sizeY ? childBox.height : cell.height, contentValign, "y"),
+    });
+  });
+  return overrides;
+}
+
+function isSpacerWidget(node) {
+  return node.typeClass === "GridSpacerWidgetClass" || node.typeClass === "WrapSpacerWidgetClass";
+}
+
+function getNodeStylePreview(node, styleRegistry) {
+  const styleName = readStringProp(node, "style", null);
+  const resolvedStyle = styleName && styleRegistry
+    ? resolveStyleInheritance(styleRegistry, styleName, { widgetType: normalizeWidgetType(node.typeClass) })
+    : null;
+  return buildStylePreview(resolvedStyle);
+}
+
+function buildStyleRender(node, stylePreview, projectIndex, previewState, widgetType) {
+  const imageSet = stylePreview?.imageSet;
+  if (!imageSet) return null;
+  const checked = readBooleanProp(node, "checked", false)
+    || readBooleanProp(node, "checkedvalue", false)
+    || readBooleanProp(node, "state", false);
+  const selectedItems = [...(stylePreview.stateItems ?? [])];
+  if (widgetType === "CheckBoxWidget" && checked) {
+    selectedItems.push(...selectXmlStyleItems(stylePreview.xmlStyle, "mark"));
+  }
+  const items = selectedItems
+    .filter((item) => item?.image)
+    .map((item, index) => {
+      const ref = `set:${imageSet} image:${item.image}`;
+      return {
+        slot: index,
+        source: "style",
+        stateName: item.stateName ?? null,
+        itemName: item.name ?? null,
+        ref,
+        line: item.line ?? null,
+        resolved: projectIndex ? resolveImageReference(ref, projectIndex) : null,
+      };
+    });
+  if (items.length === 0) return null;
+  return {
+    widgetType,
+    imageSet,
+    previewState,
+    items,
+  };
+}
+
+function selectXmlStyleItems(xmlStyle, previewState = "normal") {
+  if (!xmlStyle?.states?.length) return [];
+  const statesByName = new Map(xmlStyle.states.map((state) => [String(state.name ?? "").toLowerCase(), state]));
+  const candidateNames = stateCandidateNames(previewState);
+  for (const name of candidateNames) {
+    const state = statesByName.get(name);
+    if (state?.items?.length) {
+      return state.items.map((item) => ({ ...item, stateName: state.name }));
+    }
+  }
+  return [];
+}
+
+function stateCandidateNames(previewState) {
+  const normalized = normalizePreviewState(previewState);
+  if (String(previewState).trim().toLowerCase() === "mark") return ["mark", "normal"];
+  if (normalized === "hover") return ["highlight", "focus", "hover", "normal"];
+  if (normalized === "selected") return ["pushed", "selected", "focus", "highlight", "normal"];
+  if (normalized === "disabled") return ["disabled", "disable", "normal"];
+  return ["normal"];
+}
+
+function alignContentAxis(start, size, ownSize, align, axis) {
+  if (align === "center") return start + ((size - ownSize) / 2);
+  if ((axis === "x" && align === "right") || (axis === "y" && align === "bottom")) {
+    return start + size - ownSize;
+  }
+  return start;
 }
 
 function findProp(node, key) {
@@ -302,8 +502,13 @@ function normalizePreviewState(value) {
 }
 
 function normalizeAlign(value) {
-  const normalized = String(value).toLowerCase();
+  const normalized = String(value).trim().toLowerCase().replace(/_ref$/, "");
   if (["center", "centre", "middle"].includes(normalized)) return "center";
   if (["right", "bottom"].includes(normalized)) return normalized;
   return ["left", "top"].includes(normalized) ? normalized : normalized;
+}
+
+function normalizeWidgetType(typeClass) {
+  const value = String(typeClass ?? "").trim();
+  return value ? value.replace(/Class$/i, "") : null;
 }

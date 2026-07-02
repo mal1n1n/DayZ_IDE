@@ -1,9 +1,8 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { previewCacheKey } from "../assets/preview-cache.mjs";
-
 const browserImageExtensions = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"]);
+const nativeTextureExtensions = new Set([".edds", ".dds", ".paa", ".tga"]);
 
 export function renderPreviewHtml(model, options = {}) {
   const title = options.title ?? path.basename(model.filePath ?? "layout-preview");
@@ -76,18 +75,17 @@ export function renderPreviewHtml(model, options = {}) {
       font-size: 13px;
     }
     .stage {
-      display: grid;
-      place-items: center;
+      display: block;
       overflow: auto;
-      padding: 24px;
-      background: #9d9d9d;
+      padding: 0;
+      background: #8b8b8b;
     }
     canvas {
-      background: #111514;
-      box-shadow: 0 10px 30px rgb(0 0 0 / 35%);
+      display: block;
+      background: #8b8b8b;
       image-rendering: auto;
-      max-width: 100%;
-      max-height: 100%;
+      max-width: none;
+      max-height: none;
     }
     .tree, .details, .diagnostics {
       padding: 10px;
@@ -253,10 +251,10 @@ export function renderPreviewHtml(model, options = {}) {
 
     async function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#101413";
+      ctx.fillStyle = "#8b8b8b";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      for (const node of data.nodes) {
+      for (const node of renderOrderedNodes(data.nodes)) {
         if (!node.visible) continue;
         await drawNode(node);
       }
@@ -274,8 +272,8 @@ export function renderPreviewHtml(model, options = {}) {
           if (drawn) continue;
           drawImagePlaceholder(image, x, y, width, height);
         }
-      } else if (!isText) {
-        ctx.fillStyle = rgbaCss(colorForState(node), isImage ? "rgba(69, 122, 103, 0.22)" : "rgba(16, 22, 21, 0.42)", alphaForState(node));
+      } else if (!isText && Array.isArray(colorForState(node))) {
+        ctx.fillStyle = rgbaCss(colorForState(node), "rgba(16, 22, 21, 0)", alphaForState(node));
         ctx.fillRect(x, y, width, height);
       }
 
@@ -359,7 +357,32 @@ export function renderPreviewHtml(model, options = {}) {
       ctx.fillStyle = "#f0d094";
       ctx.font = "12px Segoe UI, Arial";
       ctx.textBaseline = "top";
-      ctx.fillText(image.cacheKey ? "EDDS cache pending" : "image missing", x + 6, y + 6, Math.max(1, width - 12));
+      ctx.fillText(image.nativeTexture ? "native texture unavailable" : "image missing", x + 6, y + 6, Math.max(1, width - 12));
+    }
+
+    function renderOrderedNodes(nodes) {
+      const childrenByParent = new Map();
+      for (const [index, node] of nodes.entries()) {
+        const parentId = node.parentId ?? null;
+        if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+        childrenByParent.get(parentId).push({ node, index });
+      }
+      for (const siblings of childrenByParent.values()) {
+        siblings.sort((a, b) => {
+          const priority = Number(a.node.priority ?? 0) - Number(b.node.priority ?? 0);
+          return priority || a.index - b.index;
+        });
+      }
+
+      const ordered = [];
+      const append = (parentId) => {
+        for (const entry of childrenByParent.get(parentId) ?? []) {
+          ordered.push(entry.node);
+          append(entry.node.id);
+        }
+      };
+      append(null);
+      return ordered;
     }
 
     function loadImage(url) {
@@ -397,7 +420,6 @@ export function renderPreviewHtml(model, options = {}) {
 }
 
 export function buildPreviewData(model, options = {}) {
-  const cacheRoot = options.cacheRoot ?? ".dzui/preview-cache";
   return {
     title: options.title ?? path.basename(model.filePath ?? "layout-preview"),
     filePath: model.filePath,
@@ -405,13 +427,27 @@ export function buildPreviewData(model, options = {}) {
     previewState: model.previewState ?? "normal",
     nodes: model.nodes.map((node) => ({
       ...node,
-      images: node.images.map((image) => serializeImageSlot(image, cacheRoot)),
+      images: node.images.map((image) => serializeImageSlot(image)),
+      styleRender: serializeStyleRender(node.styleRender),
     })),
     diagnostics: collectPreviewDiagnostics(model),
   };
 }
 
-function serializeImageSlot(image, cacheRoot) {
+function serializeStyleRender(styleRender) {
+  if (!styleRender) return null;
+  return {
+    ...styleRender,
+    items: (styleRender.items ?? []).map((item) => ({
+      ...serializeImageSlot(item),
+      source: item.source ?? "style",
+      stateName: item.stateName ?? null,
+      itemName: item.itemName ?? null,
+    })),
+  };
+}
+
+function serializeImageSlot(image) {
   const resolved = image.resolved;
   const descriptor = {
     slot: image.slot,
@@ -421,8 +457,7 @@ function serializeImageSlot(image, cacheRoot) {
     mode: resolved?.mode ?? "unresolved",
     url: null,
     crop: null,
-    cacheKey: null,
-    cachePath: null,
+    nativeTexture: null,
     filePath: null,
     virtualPath: resolved?.virtualPath ?? resolved?.texture?.virtualPath ?? null,
   };
@@ -434,15 +469,15 @@ function serializeImageSlot(image, cacheRoot) {
       width: resolved.image.size[0],
       height: resolved.image.size[1],
     } : null;
-    applyAssetUrl(descriptor, resolved.texture?.filePath, cacheRoot);
+    applyAssetUrl(descriptor, resolved.texture?.filePath);
     return descriptor;
   }
 
-  applyAssetUrl(descriptor, resolved?.filePath, cacheRoot);
+  applyAssetUrl(descriptor, resolved?.filePath);
   return descriptor;
 }
 
-function applyAssetUrl(descriptor, filePath, cacheRoot) {
+function applyAssetUrl(descriptor, filePath) {
   if (!filePath) return;
 
   const ext = path.extname(filePath).toLowerCase();
@@ -453,16 +488,21 @@ function applyAssetUrl(descriptor, filePath, cacheRoot) {
     return;
   }
 
-  if (ext === ".edds" || ext === ".paa" || ext === ".tga") {
-    descriptor.cacheKey = previewCacheKey(filePath);
-    descriptor.cachePath = path.join(cacheRoot, `${descriptor.cacheKey}.png`);
+  if (nativeTextureExtensions.has(ext)) {
+    descriptor.nativeTexture = {
+      kind: "source-texture",
+      filePath,
+      ext,
+      format: ext.replace(/^\./, ""),
+      url: null,
+    };
   }
 }
 
 function collectPreviewDiagnostics(model) {
   const diagnostics = [...model.diagnostics];
   for (const node of model.nodes) {
-    for (const image of node.images) {
+    for (const image of [...node.images, ...(node.styleRender?.items ?? [])]) {
       if (image.resolved?.ok && (image.resolved.filePath || image.resolved.texture?.filePath)) continue;
       diagnostics.push({
         type: "preview-image-unresolved",

@@ -45,6 +45,36 @@ test("buildLayoutPreviewModel computes relative widget boxes", () => {
   assertBoxClose(battery.parentBox, { x: 0, y: 0, width: 1280, height: 720 });
 });
 
+test("buildLayoutPreviewModel maps Workbench *_ref alignment names", () => {
+  const document = parseLayout(`PanelWidgetClass Root {
+ size 0.5 0.5
+ halign center_ref
+ valign center_ref
+ {
+  PanelWidgetClass RightBottom {
+   position 10 20
+   size 100 50
+   halign right_ref
+   valign bottom_ref
+   hexactpos 1
+   vexactpos 1
+   hexactsize 1
+   vexactsize 1
+  }
+ }
+}`);
+  const model = buildLayoutPreviewModel(document, { width: 1280, height: 720 });
+  const root = model.nodes.find((node) => node.name === "Root");
+  const child = model.nodes.find((node) => node.name === "RightBottom");
+
+  assertBoxClose(root.box, { x: 320, y: 180, width: 640, height: 360 });
+  assertBoxClose(child.box, { x: 850, y: 470, width: 100, height: 50 });
+  assert.equal(root.box.align.horizontal, "center");
+  assert.equal(root.box.align.vertical, "center");
+  assert.equal(child.box.align.horizontal, "right");
+  assert.equal(child.box.align.vertical, "bottom");
+});
+
 test("renderPreviewHtml emits a standalone canvas preview document", () => {
   const document = parseLayout(`FrameWidgetClass PDAFrame {
  size 1 1
@@ -62,6 +92,8 @@ test("renderPreviewHtml emits a standalone canvas preview document", () => {
   assert.match(html, /<canvas id="canvas"><\/canvas>/);
   assert.match(html, /pda_minimal\.layout/);
   assert.match(html, /set:data image:battery/);
+  assert.match(html, /background: #8b8b8b/);
+  assert.doesNotMatch(html, /max-width: 100%;/);
 });
 
 test("buildLayoutPreviewModel localizes stringtable text by language", () => {

@@ -19,24 +19,6 @@ export function createDefaultProjectSettings(projectRoot, overrides = {}) {
       language: "English",
       state: "normal",
     },
-    build: {
-      addonSource: null,
-      outputRoot: null,
-      prefix: null,
-      toolsRoot: null,
-      dayzRoot: null,
-      pDrive: null,
-      allowDiagnostics: false,
-      timeoutMs: 300000,
-    },
-    workshop: {
-      itemId: null,
-      title: null,
-      changeNote: null,
-      previewImage: null,
-      contentRoot: null,
-      commandJson: null,
-    },
     recent: {
       projectRoots: [],
       layoutPaths: [],
@@ -81,8 +63,6 @@ export function normalizeProjectSettings(input = {}, context = {}) {
   const projectRoot = path.resolve(requiredProjectRoot(context.projectRoot ?? input.projectRoot));
   const layoutPath = optionalString(input.layoutPath);
   const preview = input.preview ?? {};
-  const build = input.build ?? {};
-  const workshop = input.workshop ?? {};
   const recent = input.recent ?? {};
   const recentProjectRoots = uniqueRecent([
     projectRoot,
@@ -103,24 +83,6 @@ export function normalizeProjectSettings(input = {}, context = {}) {
       height: positiveNumber(preview.height, 720),
       language: optionalString(preview.language) ?? "English",
       state: normalizePreviewState(preview.state ?? preview.previewState),
-    },
-    build: {
-      addonSource: optionalString(build.addonSource),
-      outputRoot: optionalString(build.outputRoot),
-      prefix: optionalString(build.prefix),
-      toolsRoot: optionalString(build.toolsRoot),
-      dayzRoot: optionalString(build.dayzRoot),
-      pDrive: optionalString(build.pDrive),
-      allowDiagnostics: build.allowDiagnostics === true,
-      timeoutMs: positiveNumber(build.timeoutMs, 300000),
-    },
-    workshop: {
-      itemId: optionalString(workshop.itemId),
-      title: optionalString(workshop.title),
-      changeNote: optionalString(workshop.changeNote),
-      previewImage: optionalString(workshop.previewImage),
-      contentRoot: optionalString(workshop.contentRoot),
-      commandJson: optionalString(workshop.commandJson),
     },
     recent: {
       projectRoots: recentProjectRoots,

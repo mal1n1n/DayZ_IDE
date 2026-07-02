@@ -1,6 +1,8 @@
 #!/usr/bin/env node
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,24 +11,15 @@ import {
   buildLayoutDiffReport,
   buildLayoutPreviewModel,
   buildLayoutTransformPatch,
-  buildTextureConversionPlan,
-  buildToolchainReadinessReport,
-  buildEngineCapturePlan,
-  buildEngineLaunchPlan,
-  buildEnginePreviewWorkspace,
   buildFontCoverageReport,
-  buildGeometryDiffReport,
   buildPreviewData,
-  buildPboWorkflowPlan,
   buildPluginRuntimePackage,
   buildPluginRuntimeRegistry,
   buildPluginSdkReport,
-  buildWorkshopPublishPlan,
   buildProjectAssetIndex,
   createEditTransaction,
   createWidget,
   deleteWidget,
-  diffPngFiles,
   ensureDecodedPreviewAsset,
   fontRegistryToJson,
   generateControllerSkeleton,
@@ -39,7 +32,6 @@ import {
   parseLayout,
   parseStringTableCsv,
   parseStyleFile,
-  previewCacheKey,
   redoTransaction,
   readProjectSettings,
   readPluginTrustPolicy,
@@ -48,10 +40,6 @@ import {
   listWidgetPalette,
   packImageAtlas,
   runPluginRuntimeCommand,
-  runEngineCaptureWorkflow,
-  runPboWorkflow,
-  runWorkshopPublishWorkflow,
-  runTextureConversionWorkflow,
   styleFileToJson,
   stringTableToGrid,
   undoTransaction,
@@ -62,21 +50,49 @@ import {
   validateProject,
   verifyPluginRuntimePackage,
   writePluginRuntimePackage,
-  writeEnginePreviewWorkspace,
   writeProjectSettings,
 } from "../../../packages/core/src/index.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.resolve(__dirname, "../public");
 const args = parseArgs(process.argv.slice(2));
-const port = Number(args.get("--port") ?? process.env.PORT ?? 5173);
-const host = args.get("--host") ?? "127.0.0.1";
+const defaultPort = Number(args.get("--port") ?? process.env.PORT ?? 5173);
+const defaultHost = args.get("--host") ?? "127.0.0.1";
 const browserImageExtensions = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"]);
-const imageAssetExtensions = new Set([...browserImageExtensions, ".edds", ".paa", ".tga", ".dds"]);
+const nativeTextureExtensions = new Set([".edds", ".paa", ".tga", ".dds"]);
+const imageAssetExtensions = new Set([...browserImageExtensions, ...nativeTextureExtensions]);
+const projectBrowserSkipDirs = new Set([".git", ".dzui", "node_modules", "dist", "build", "out", "output", "temp", "tmp"]);
+const appRoot = path.resolve(__dirname, "../../..");
+const environmentConfigRoot = process.env.DZUI_CONFIG_ROOT
+  ? path.resolve(process.env.DZUI_CONFIG_ROOT)
+  : path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local"), "DayZ IDE");
+const environmentSettingsPath = path.join(environmentConfigRoot, ".dzui", "ide-environment.json");
+const defaultDayzProjectsRoot = path.join(os.homedir(), "Documents", "DayZ Projects");
+const mcpServerScript = path.resolve(__dirname, "../../../packages/mcp-server/src/server.mjs");
+const mcpState = {
+  child: null,
+  host: "127.0.0.1",
+  port: 8765,
+  projectRoot: null,
+  startedAt: null,
+  exit: null,
+  logs: [],
+};
 
-const server = http.createServer(async (request, response) => {
+export function mcpChildEnvironment(baseEnv = process.env) {
+  return {
+    ...baseEnv,
+    ELECTRON_RUN_AS_NODE: "1",
+  };
+}
+
+export function createDesktopServer() {
+  return http.createServer(async (request, response) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host}`);
+    if (url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/environment/")) {
+      if (!requireReadyEnvironment(response)) return;
+    }
     if (url.pathname === "/api/layout") {
       await handleLayout(url, response);
       return;
@@ -145,6 +161,14 @@ const server = http.createServer(async (request, response) => {
       await handleProjectValidate(url, response);
       return;
     }
+    if (url.pathname === "/api/project/layouts") {
+      await handleProjectLayouts(url, response);
+      return;
+    }
+    if (url.pathname === "/api/project/files") {
+      await handleProjectFiles(url, response);
+      return;
+    }
     if (url.pathname === "/api/project/plugins") {
       await handleProjectPlugins(url, response);
       return;
@@ -173,60 +197,36 @@ const server = http.createServer(async (request, response) => {
       await handleProjectPluginCommand(request, response);
       return;
     }
+    if (url.pathname === "/api/environment/status") {
+      await handleEnvironmentStatus(response);
+      return;
+    }
+    if (url.pathname === "/api/environment/save") {
+      await handleEnvironmentSave(request, response);
+      return;
+    }
+    if (url.pathname === "/api/environment/recent-projects") {
+      await handleEnvironmentRecentProjectsSave(request, response);
+      return;
+    }
+    if (url.pathname === "/api/mcp/status") {
+      await handleMcpStatus(response);
+      return;
+    }
+    if (url.pathname === "/api/mcp/start") {
+      await handleMcpStart(request, response);
+      return;
+    }
+    if (url.pathname === "/api/mcp/stop") {
+      await handleMcpStop(request, response);
+      return;
+    }
     if (url.pathname === "/api/project/settings") {
       await handleProjectSettings(url, response);
       return;
     }
     if (url.pathname === "/api/project/settings/save") {
       await handleProjectSettingsSave(request, response);
-      return;
-    }
-    if (url.pathname === "/api/toolchain/readiness") {
-      await handleToolchainReadiness(url, response);
-      return;
-    }
-    if (url.pathname === "/api/engine/launch-plan") {
-      await handleEngineLaunchPlan(url, response);
-      return;
-    }
-    if (url.pathname === "/api/engine/preview-workspace") {
-      await handleEnginePreviewWorkspace(url, response);
-      return;
-    }
-    if (url.pathname === "/api/engine/preview-workspace/save") {
-      await handleEnginePreviewWorkspaceSave(request, response);
-      return;
-    }
-    if (url.pathname === "/api/engine/geometry-diff") {
-      await handleEngineGeometryDiff(url, response);
-      return;
-    }
-    if (url.pathname === "/api/engine/pixel-diff") {
-      await handleEnginePixelDiff(url, response);
-      return;
-    }
-    if (url.pathname === "/api/engine/capture/plan") {
-      await handleEngineCapturePlan(url, response);
-      return;
-    }
-    if (url.pathname === "/api/engine/capture/run") {
-      await handleEngineCaptureRun(request, response);
-      return;
-    }
-    if (url.pathname === "/api/build/plan") {
-      await handleBuildPlan(url, response);
-      return;
-    }
-    if (url.pathname === "/api/build/run") {
-      await handleBuildRun(url, response);
-      return;
-    }
-    if (url.pathname === "/api/workshop/plan") {
-      await handleWorkshopPlan(url, response);
-      return;
-    }
-    if (url.pathname === "/api/workshop/run") {
-      await handleWorkshopRun(request, response);
       return;
     }
     if (url.pathname === "/api/script/controller") {
@@ -269,14 +269,6 @@ const server = http.createServer(async (request, response) => {
       await handleAtlasPack(request, response);
       return;
     }
-    if (url.pathname === "/api/texture/convert/plan") {
-      await handleTextureConvertPlan(request, response);
-      return;
-    }
-    if (url.pathname === "/api/texture/convert/run") {
-      await handleTextureConvertRun(request, response);
-      return;
-    }
     if (url.pathname === "/api/assets/images") {
       await handleImageAssets(url, response);
       return;
@@ -285,17 +277,51 @@ const server = http.createServer(async (request, response) => {
       await handleAsset(url, response);
       return;
     }
+    if (url.pathname === "/api/texture/native") {
+      await handleNativeTexture(url, response);
+      return;
+    }
     await serveStatic(url.pathname, response);
   } catch (error) {
     sendJson(response, 500, {
       error: error instanceof Error ? error.message : String(error),
     });
   }
-});
+  });
+}
 
-server.listen(port, host, () => {
-  console.log(`DZUI shell running at http://${host}:${port}/`);
-});
+export function startDesktopServer(options = {}) {
+  const host = options.host ?? defaultHost;
+  const port = Number(options.port ?? defaultPort);
+  const log = options.log !== false;
+  const server = createDesktopServer();
+  server.on("close", () => {
+    if (mcpState.child && !mcpState.child.killed) {
+      mcpState.child.kill();
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    const onError = (error) => reject(error);
+    server.once("error", onError);
+    server.listen(port, host, () => {
+      server.off("error", onError);
+      const address = server.address();
+      const actualPort = typeof address === "object" && address ? address.port : port;
+      const url = `http://${host}:${actualPort}/`;
+      if (log) console.log(`DZUI shell running at ${url}`);
+      resolve({ server, host, port: actualPort, url });
+    });
+  });
+}
+
+if (isDirectRun()) {
+  await startDesktopServer();
+}
+
+function isDirectRun() {
+  return process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+}
 
 async function handleLayout(url, response) {
   const filePath = url.searchParams.get("file");
@@ -720,6 +746,159 @@ async function handleProjectValidate(url, response) {
   sendJson(response, 200, validateProject(root));
 }
 
+async function handleProjectLayouts(url, response) {
+  const projectRoot = url.searchParams.get("project");
+  if (!projectRoot) {
+    sendJson(response, 400, { error: "Missing project query parameter." });
+    return;
+  }
+  const root = path.resolve(projectRoot);
+  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
+    sendJson(response, 404, { error: `Project root does not exist: ${root}` });
+    return;
+  }
+
+  const query = String(url.searchParams.get("query") || "").trim().toLowerCase();
+  const allLayouts = listProjectLayouts(root);
+  const filteredLayouts = query
+    ? allLayouts.filter((layout) => layout.relativePath.toLowerCase().includes(query))
+    : allLayouts;
+  const limit = 1000;
+  sendJson(response, 200, {
+    projectRoot: root,
+    total: filteredLayouts.length,
+    truncated: filteredLayouts.length > limit,
+    layouts: filteredLayouts.slice(0, limit),
+  });
+}
+
+function listProjectLayouts(root) {
+  const layouts = [];
+  const stack = [root];
+  while (stack.length) {
+    const current = stack.pop();
+    let entries;
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const entryPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        if (!projectBrowserSkipDirs.has(entry.name.toLowerCase())) stack.push(entryPath);
+        continue;
+      }
+      if (!entry.isFile() || path.extname(entry.name).toLowerCase() !== ".layout") continue;
+      const stat = fs.statSync(entryPath);
+      layouts.push({
+        name: entry.name,
+        filePath: entryPath,
+        relativePath: path.relative(root, entryPath).replaceAll("\\", "/"),
+        size: stat.size,
+        mtimeMs: stat.mtimeMs,
+      });
+    }
+  }
+  return layouts.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+}
+
+async function handleProjectFiles(url, response) {
+  const projectRoot = url.searchParams.get("project");
+  if (!projectRoot) {
+    sendJson(response, 400, { error: "Missing project query parameter." });
+    return;
+  }
+  const root = path.resolve(projectRoot);
+  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
+    sendJson(response, 404, { error: `Project root does not exist: ${root}` });
+    return;
+  }
+
+  const counters = {
+    directoryCount: 0,
+    fileCount: 0,
+    layoutCount: 0,
+    total: 0,
+    truncated: false,
+    limit: 5000,
+  };
+  const tree = buildProjectFileTree(root, root, counters);
+  sendJson(response, 200, {
+    projectRoot: root,
+    directoryCount: counters.directoryCount,
+    fileCount: counters.fileCount,
+    layoutCount: counters.layoutCount,
+    total: counters.total,
+    truncated: counters.truncated,
+    tree,
+  });
+}
+
+function buildProjectFileTree(root, current, counters) {
+  const relativePath = path.relative(root, current).replaceAll("\\", "/");
+  const node = {
+    type: "directory",
+    name: relativePath ? path.basename(current) : path.basename(root),
+    filePath: current,
+    relativePath,
+    children: [],
+  };
+  if (relativePath) counters.directoryCount += 1;
+
+  let entries = [];
+  try {
+    entries = fs.readdirSync(current, { withFileTypes: true });
+  } catch {
+    return node;
+  }
+
+  const directories = [];
+  const files = [];
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      if (!projectBrowserSkipDirs.has(entry.name.toLowerCase())) directories.push(entry);
+    } else if (entry.isFile()) {
+      files.push(entry);
+    }
+  }
+
+  directories.sort((a, b) => a.name.localeCompare(b.name));
+  files.sort((a, b) => a.name.localeCompare(b.name));
+
+  for (const entry of directories) {
+    if (counters.truncated) break;
+    node.children.push(buildProjectFileTree(root, path.join(current, entry.name), counters));
+  }
+  for (const entry of files) {
+    if (counters.total >= counters.limit) {
+      counters.truncated = true;
+      break;
+    }
+    const filePath = path.join(current, entry.name);
+    let stat;
+    try {
+      stat = fs.statSync(filePath);
+    } catch {
+      continue;
+    }
+    const ext = path.extname(entry.name).toLowerCase();
+    counters.total += 1;
+    counters.fileCount += 1;
+    if (ext === ".layout") counters.layoutCount += 1;
+    node.children.push({
+      type: "file",
+      name: entry.name,
+      filePath,
+      relativePath: path.relative(root, filePath).replaceAll("\\", "/"),
+      ext,
+      size: stat.size,
+      mtimeMs: stat.mtimeMs,
+    });
+  }
+  return node;
+}
+
 async function handleProjectPlugins(url, response) {
   const projectRoot = url.searchParams.get("project");
   if (!projectRoot) {
@@ -839,6 +1018,255 @@ async function handleProjectPluginCommand(request, response) {
   }));
 }
 
+async function handleEnvironmentStatus(response) {
+  sendJson(response, 200, readEnvironmentStatus());
+}
+
+async function handleEnvironmentSave(request, response) {
+  if (request.method !== "POST") {
+    sendJson(response, 405, { error: "Use POST for environment setup." });
+    return;
+  }
+  const body = await readJsonBody(request);
+  const current = readEnvironmentSettings();
+  const settings = normalizeEnvironmentSettings({
+    ...current,
+    projectsRoot: body.projectsRoot,
+    recentProjectRoots: body.recentProjectRoots ?? current.recentProjectRoots,
+  });
+  const status = buildEnvironmentStatus(settings);
+  if (!status.ready) {
+    sendJson(response, 400, status);
+    return;
+  }
+  fs.mkdirSync(path.dirname(environmentSettingsPath), { recursive: true });
+  fs.writeFileSync(environmentSettingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+  sendJson(response, 200, readEnvironmentStatus());
+}
+
+async function handleEnvironmentRecentProjectsSave(request, response) {
+  if (request.method !== "POST") {
+    sendJson(response, 405, { error: "Use POST for recent projects." });
+    return;
+  }
+  const body = await readJsonBody(request);
+  const settings = normalizeEnvironmentSettings({
+    ...readEnvironmentSettings(),
+    recentProjectRoots: body.recentProjectRoots,
+  });
+  fs.mkdirSync(path.dirname(environmentSettingsPath), { recursive: true });
+  fs.writeFileSync(environmentSettingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+  sendJson(response, 200, readEnvironmentStatus());
+}
+
+function readEnvironmentStatus() {
+  return buildEnvironmentStatus(readEnvironmentSettings(), fs.existsSync(environmentSettingsPath));
+}
+
+function readEnvironmentSettings() {
+  if (!fs.existsSync(environmentSettingsPath)) {
+    return normalizeEnvironmentSettings({});
+  }
+  try {
+    return normalizeEnvironmentSettings(JSON.parse(fs.readFileSync(environmentSettingsPath, "utf8")));
+  } catch {
+    return normalizeEnvironmentSettings({});
+  }
+}
+
+function normalizeEnvironmentSettings(input = {}) {
+  return {
+    ...input,
+    kind: "DzuiIdeEnvironment",
+    version: 1,
+    projectsRoot: path.resolve(input.projectsRoot || defaultDayzProjectsRoot),
+    recentProjectRoots: normalizeRecentProjectRoots(input.recentProjectRoots),
+  };
+}
+
+function normalizeRecentProjectRoots(projectRoots, limit = 10) {
+  const seen = new Set();
+  const out = [];
+  for (const projectRoot of Array.isArray(projectRoots) ? projectRoots : []) {
+    if (typeof projectRoot !== "string" || !projectRoot.trim()) continue;
+    const value = path.resolve(projectRoot.trim().replace(/[\\/]+$/, ""));
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(value);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+function buildEnvironmentStatus(settings, initialized = true) {
+  const projectsRootExists = fs.existsSync(settings.projectsRoot) && fs.statSync(settings.projectsRoot).isDirectory();
+  const counts = projectsRootExists ? countVanillaProjectAssets(settings.projectsRoot) : {
+    layouts: 0,
+    styles: 0,
+    imageSets: 0,
+  };
+  const missing = [];
+  if (!initialized) missing.push(`IDE environment settings: ${environmentSettingsPath}`);
+  if (!projectsRootExists) missing.push(`DayZ Projects root: ${settings.projectsRoot}`);
+
+  return {
+    kind: "DzuiIdeEnvironmentStatus",
+    initialized,
+    ready: initialized && missing.length === 0,
+    settingsPath: environmentSettingsPath,
+    defaults: {
+      projectsRoot: defaultDayzProjectsRoot,
+    },
+    settings,
+    checks: {
+      projectsRootExists,
+    },
+    missing,
+    counts,
+  };
+}
+
+function countVanillaProjectAssets(root) {
+  const counts = { layouts: 0, styles: 0, imageSets: 0 };
+  const stack = [root];
+  while (stack.length) {
+    const current = stack.pop();
+    let entries = [];
+    try {
+      entries = fs.readdirSync(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(fullPath);
+        continue;
+      }
+      const ext = path.extname(entry.name).toLowerCase();
+      if (ext === ".layout") counts.layouts += 1;
+      if (ext === ".styles") counts.styles += 1;
+      if (ext === ".imageset") counts.imageSets += 1;
+    }
+  }
+  return counts;
+}
+
+function requireReadyEnvironment(response) {
+  const status = readEnvironmentStatus();
+  if (status.ready) return status;
+  sendJson(response, 428, {
+    error: "DayZ IDE environment is not initialized.",
+    ...status,
+  });
+  return null;
+}
+
+function buildDesktopProjectAssetIndex(root) {
+  const environment = readEnvironmentStatus();
+  const vanillaRoots = environment.ready ? environment.settings.projectsRoot : process.env.DZUI_VANILLA_ASSETS;
+  return buildProjectAssetIndex(root, { vanillaRoots });
+}
+
+async function handleMcpStatus(response) {
+  sendJson(response, 200, mcpStatusPayload());
+}
+
+async function handleMcpStart(request, response) {
+  if (request.method !== "POST") {
+    sendJson(response, 405, { error: "Use POST to start the MCP server." });
+    return;
+  }
+  const body = await readJsonBody(request);
+  if (mcpState.child && !mcpState.child.killed) {
+    sendJson(response, 200, mcpStatusPayload());
+    return;
+  }
+
+  const port = normalizePort(body.port ?? 8765);
+  const projectRoot = typeof body.projectRoot === "string" && body.projectRoot.trim()
+    ? path.resolve(body.projectRoot)
+    : null;
+  if (projectRoot && (!fs.existsSync(projectRoot) || !fs.statSync(projectRoot).isDirectory())) {
+    sendJson(response, 404, { error: `Project root does not exist: ${projectRoot}` });
+    return;
+  }
+
+  const childArgs = [mcpServerScript, "--http", "--host", mcpState.host, "--port", String(port)];
+  if (projectRoot) childArgs.push("--project", projectRoot);
+
+  mcpState.port = port;
+  mcpState.projectRoot = projectRoot;
+  mcpState.startedAt = new Date().toISOString();
+  mcpState.exit = null;
+  mcpState.logs = [];
+  mcpState.child = spawn(process.execPath, childArgs, {
+    cwd: path.resolve(__dirname, "../../.."),
+    env: mcpChildEnvironment(),
+    stdio: ["ignore", "pipe", "pipe"],
+    windowsHide: true,
+  });
+
+  appendMcpLog(`started: ${process.execPath} ${childArgs.join(" ")} (ELECTRON_RUN_AS_NODE=1)`);
+  mcpState.child.stdout?.on("data", (chunk) => appendMcpLog(chunk.toString("utf8").trimEnd()));
+  mcpState.child.stderr?.on("data", (chunk) => appendMcpLog(chunk.toString("utf8").trimEnd()));
+  mcpState.child.on("exit", (code, signal) => {
+    mcpState.exit = { code, signal, at: new Date().toISOString() };
+    appendMcpLog(`exited: code=${code ?? "null"} signal=${signal ?? "null"}`);
+    mcpState.child = null;
+  });
+
+  sendJson(response, 200, mcpStatusPayload());
+}
+
+async function handleMcpStop(request, response) {
+  if (request.method !== "POST") {
+    sendJson(response, 405, { error: "Use POST to stop the MCP server." });
+    return;
+  }
+  if (mcpState.child && !mcpState.child.killed) {
+    appendMcpLog("stopping MCP server");
+    mcpState.child.kill();
+  }
+  sendJson(response, 200, mcpStatusPayload());
+}
+
+function mcpStatusPayload() {
+  const running = Boolean(mcpState.child && !mcpState.child.killed);
+  const endpoint = `http://${mcpState.host}:${mcpState.port}/mcp`;
+  return {
+    running,
+    pid: running ? mcpState.child.pid : null,
+    host: mcpState.host,
+    port: mcpState.port,
+    endpoint,
+    health: `http://${mcpState.host}:${mcpState.port}/health`,
+    projectRoot: mcpState.projectRoot,
+    startedAt: mcpState.startedAt,
+    exit: mcpState.exit,
+    logs: mcpState.logs.slice(-80),
+  };
+}
+
+function appendMcpLog(line) {
+  if (!line) return;
+  for (const part of String(line).split(/\r?\n/)) {
+    if (part) mcpState.logs.push(`[${new Date().toISOString()}] ${part}`);
+  }
+  if (mcpState.logs.length > 200) {
+    mcpState.logs.splice(0, mcpState.logs.length - 200);
+  }
+}
+
+function normalizePort(value) {
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error("port must be an integer between 1 and 65535.");
+  }
+  return port;
+}
+
 function pluginPackageSigningOptions(body) {
   return {
     signPrivateKeyPem: body.signPrivateKeyPem,
@@ -902,412 +1330,6 @@ async function handleProjectSettingsSave(request, response) {
   sendJson(response, 200, writeProjectSettings(root, body.settings ?? {}));
 }
 
-async function handleToolchainReadiness(url, response) {
-  sendJson(response, 200, buildToolchainReadinessReport({
-    projectRoot: url.searchParams.get("project") || undefined,
-    layoutPath: url.searchParams.get("layout") || undefined,
-    addonSource: url.searchParams.get("addon") || undefined,
-    outputRoot: url.searchParams.get("out") || undefined,
-    prefix: url.searchParams.get("prefix") || undefined,
-    toolsRoot: url.searchParams.get("tools") || undefined,
-    dayzRoot: url.searchParams.get("dayz") || undefined,
-    pDrive: url.searchParams.get("pdrive") || undefined,
-    pboPath: url.searchParams.get("pbo") || undefined,
-    contentRoot: url.searchParams.get("content") || undefined,
-    workshopItemId: url.searchParams.get("item") || url.searchParams.get("workshopId") || undefined,
-    title: url.searchParams.get("title") || undefined,
-    changeNote: url.searchParams.get("changeNote") || undefined,
-    changeNoteFile: url.searchParams.get("changeNoteFile") || undefined,
-    previewImage: url.searchParams.get("preview") || undefined,
-    sourceImage: url.searchParams.get("texture") || undefined,
-    textureOutputPath: url.searchParams.get("textureOut") || undefined,
-    textureFormat: url.searchParams.get("textureFormat") || undefined,
-    converterPath: url.searchParams.get("converter") || undefined,
-    captureOutputRoot: url.searchParams.get("captureOut") || undefined,
-    expectedScreenshotPath: url.searchParams.get("expected") || undefined,
-    actualScreenshotPath: url.searchParams.get("actual") || undefined,
-    geometryDumpPath: url.searchParams.get("geometry") || undefined,
-    pixelDiffPath: url.searchParams.get("pixelDiff") || undefined,
-    allowDiagnostics: url.searchParams.get("allowDiagnostics") === "true",
-    requirePbo: url.searchParams.get("requirePbo") === "false" ? false : undefined,
-  }));
-}
-
-async function handleEngineLaunchPlan(url, response) {
-  const projectRoot = url.searchParams.get("project");
-  const layoutPath = url.searchParams.get("layout");
-  if (!projectRoot) {
-    sendJson(response, 400, { error: "Missing project query parameter." });
-    return;
-  }
-  if (!layoutPath) {
-    sendJson(response, 400, { error: "Missing layout query parameter." });
-    return;
-  }
-  const root = path.resolve(projectRoot);
-  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
-    sendJson(response, 404, { error: `Project root does not exist: ${root}` });
-    return;
-  }
-  sendJson(response, 200, buildEngineLaunchPlan({
-    mode: url.searchParams.get("mode") || undefined,
-    projectRoot: root,
-    layoutPath,
-    missionPath: url.searchParams.get("mission") || undefined,
-    toolsRoot: url.searchParams.get("tools") || undefined,
-    dayzRoot: url.searchParams.get("dayz") || undefined,
-    pDrive: url.searchParams.get("pdrive") || undefined,
-  }));
-}
-
-async function handleEnginePreviewWorkspace(url, response) {
-  const workspaceOptions = resolveEnginePreviewWorkspaceQuery(url);
-  if (!workspaceOptions.ok) {
-    sendJson(response, workspaceOptions.status, { error: workspaceOptions.error });
-    return;
-  }
-  sendJson(response, 200, buildEnginePreviewWorkspace(workspaceOptions.value));
-}
-
-async function handleEnginePreviewWorkspaceSave(request, response) {
-  if (request.method !== "POST") {
-    sendJson(response, 405, { error: "Use POST for engine preview workspace generation." });
-    return;
-  }
-  const body = await readJsonBody(request);
-  const projectRoot = path.resolve(requireBodyString(body.projectRoot, "projectRoot"));
-  const layoutPath = path.resolve(requireBodyString(body.layoutPath, "layoutPath"));
-  if (!fs.existsSync(projectRoot) || !fs.statSync(projectRoot).isDirectory()) {
-    sendJson(response, 404, { error: `Project root does not exist: ${projectRoot}` });
-    return;
-  }
-  if (!fs.existsSync(layoutPath) || !fs.statSync(layoutPath).isFile()) {
-    sendJson(response, 404, { error: `Layout file does not exist: ${layoutPath}` });
-    return;
-  }
-  sendJson(response, 200, writeEnginePreviewWorkspace({
-    projectRoot,
-    layoutPath,
-    previewRoot: body.previewRoot || undefined,
-    missionName: body.missionName || undefined,
-    worldName: body.worldName || undefined,
-    menuClass: body.menuClass || undefined,
-    width: body.width,
-    height: body.height,
-    language: body.language,
-    toolsRoot: body.toolsRoot || undefined,
-    dayzRoot: body.dayzRoot || undefined,
-    pDrive: body.pDrive || undefined,
-  }));
-}
-
-async function handleEngineGeometryDiff(url, response) {
-  const layoutPath = url.searchParams.get("layout");
-  const dumpPath = url.searchParams.get("dump");
-  if (!layoutPath) {
-    sendJson(response, 400, { error: "Missing layout query parameter." });
-    return;
-  }
-  if (!dumpPath) {
-    sendJson(response, 400, { error: "Missing dump query parameter." });
-    return;
-  }
-  const layout = path.resolve(layoutPath);
-  const dump = path.resolve(dumpPath);
-  if (!fs.existsSync(layout) || !fs.statSync(layout).isFile()) {
-    sendJson(response, 404, { error: `Layout file does not exist: ${layout}` });
-    return;
-  }
-  if (!fs.existsSync(dump) || !fs.statSync(dump).isFile()) {
-    sendJson(response, 404, { error: `Engine dump file does not exist: ${dump}` });
-    return;
-  }
-  const projectRoot = url.searchParams.get("project") ? path.resolve(url.searchParams.get("project")) : null;
-  const projectIndex = projectRoot ? buildProjectAssetIndex(projectRoot) : null;
-  const document = parseLayout(fs.readFileSync(layout, "utf8"), { filePath: layout });
-  const model = buildLayoutPreviewModel(document, {
-    width: Number(url.searchParams.get("width") ?? 1280),
-    height: Number(url.searchParams.get("height") ?? 720),
-    projectIndex,
-    language: url.searchParams.get("language") ?? "English",
-  });
-  const engineDump = JSON.parse(fs.readFileSync(dump, "utf8"));
-  sendJson(response, 200, buildGeometryDiffReport(model, engineDump, {
-    tolerancePx: Number(url.searchParams.get("tolerance") ?? 1),
-  }));
-}
-
-async function handleEnginePixelDiff(url, response) {
-  const expectedPath = url.searchParams.get("expected");
-  const actualPath = url.searchParams.get("actual");
-  if (!expectedPath) {
-    sendJson(response, 400, { error: "Missing expected query parameter." });
-    return;
-  }
-  if (!actualPath) {
-    sendJson(response, 400, { error: "Missing actual query parameter." });
-    return;
-  }
-  const expected = path.resolve(expectedPath);
-  const actual = path.resolve(actualPath);
-  if (!fs.existsSync(expected) || !fs.statSync(expected).isFile()) {
-    sendJson(response, 404, { error: `Expected PNG does not exist: ${expected}` });
-    return;
-  }
-  if (!fs.existsSync(actual) || !fs.statSync(actual).isFile()) {
-    sendJson(response, 404, { error: `Actual PNG does not exist: ${actual}` });
-    return;
-  }
-  sendJson(response, 200, diffPngFiles({
-    expectedPath: expected,
-    actualPath: actual,
-    diffPath: url.searchParams.get("diff") || undefined,
-    tolerance: Number(url.searchParams.get("tolerance") ?? 0),
-    ignoreAlpha: url.searchParams.get("ignoreAlpha") === "true",
-  }));
-}
-
-async function handleEngineCapturePlan(url, response) {
-  const options = readEngineCaptureQuery(url);
-  if (!options.ok) {
-    sendJson(response, options.status, { error: options.error });
-    return;
-  }
-  sendJson(response, 200, buildEngineCapturePlan(options.value));
-}
-
-async function handleEngineCaptureRun(request, response) {
-  if (request.method !== "POST") {
-    sendJson(response, 405, { error: "Use POST for engine capture run." });
-    return;
-  }
-  const body = await readJsonBody(request);
-  const projectRoot = path.resolve(requireBodyString(body.projectRoot, "projectRoot"));
-  const layoutPath = path.resolve(requireBodyString(body.layoutPath, "layoutPath"));
-  if (!fs.existsSync(projectRoot) || !fs.statSync(projectRoot).isDirectory()) {
-    sendJson(response, 404, { error: `Project root does not exist: ${projectRoot}` });
-    return;
-  }
-  if (!fs.existsSync(layoutPath) || !fs.statSync(layoutPath).isFile()) {
-    sendJson(response, 404, { error: `Layout file does not exist: ${layoutPath}` });
-    return;
-  }
-  sendJson(response, 200, runEngineCaptureWorkflow({
-    projectRoot,
-    layoutPath,
-    outputRoot: body.outputRoot || undefined,
-    expectedScreenshotPath: body.expectedScreenshotPath || undefined,
-    actualScreenshotPath: body.actualScreenshotPath || undefined,
-    geometryDumpPath: body.geometryDumpPath || undefined,
-    pixelDiffPath: body.pixelDiffPath || undefined,
-    toolsRoot: body.toolsRoot || undefined,
-    dayzRoot: body.dayzRoot || undefined,
-    pDrive: body.pDrive || undefined,
-    timeoutMs: body.timeoutMs,
-    waitMs: body.waitMs,
-    allowNotReady: body.allowNotReady === true,
-  }));
-}
-
-function resolveEnginePreviewWorkspaceQuery(url) {
-  const projectRoot = url.searchParams.get("project");
-  const layoutPath = url.searchParams.get("layout");
-  if (!projectRoot) {
-    return { ok: false, status: 400, error: "Missing project query parameter." };
-  }
-  if (!layoutPath) {
-    return { ok: false, status: 400, error: "Missing layout query parameter." };
-  }
-  const root = path.resolve(projectRoot);
-  const layout = path.resolve(layoutPath);
-  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
-    return { ok: false, status: 404, error: `Project root does not exist: ${root}` };
-  }
-  if (!fs.existsSync(layout) || !fs.statSync(layout).isFile()) {
-    return { ok: false, status: 404, error: `Layout file does not exist: ${layout}` };
-  }
-  return {
-    ok: true,
-    value: {
-      projectRoot: root,
-      layoutPath: layout,
-      previewRoot: url.searchParams.get("out") || undefined,
-      missionName: url.searchParams.get("missionName") || undefined,
-      worldName: url.searchParams.get("world") || undefined,
-      menuClass: url.searchParams.get("menuClass") || undefined,
-      width: Number(url.searchParams.get("width") || 1280),
-      height: Number(url.searchParams.get("height") || 720),
-      language: url.searchParams.get("language") || undefined,
-      toolsRoot: url.searchParams.get("tools") || undefined,
-      dayzRoot: url.searchParams.get("dayz") || undefined,
-      pDrive: url.searchParams.get("pdrive") || undefined,
-    },
-  };
-}
-
-function readEngineCaptureQuery(url) {
-  const projectRoot = url.searchParams.get("project");
-  const layoutPath = url.searchParams.get("layout");
-  if (!projectRoot) return { ok: false, status: 400, error: "Missing project query parameter." };
-  if (!layoutPath) return { ok: false, status: 400, error: "Missing layout query parameter." };
-  const root = path.resolve(projectRoot);
-  const layout = path.resolve(layoutPath);
-  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
-    return { ok: false, status: 404, error: `Project root does not exist: ${root}` };
-  }
-  if (!fs.existsSync(layout) || !fs.statSync(layout).isFile()) {
-    return { ok: false, status: 404, error: `Layout file does not exist: ${layout}` };
-  }
-  return {
-    ok: true,
-    value: {
-      projectRoot: root,
-      layoutPath: layout,
-      outputRoot: url.searchParams.get("out") || undefined,
-      expectedScreenshotPath: url.searchParams.get("expected") || undefined,
-      actualScreenshotPath: url.searchParams.get("actual") || undefined,
-      geometryDumpPath: url.searchParams.get("geometry") || undefined,
-      pixelDiffPath: url.searchParams.get("pixelDiff") || undefined,
-      toolsRoot: url.searchParams.get("tools") || undefined,
-      dayzRoot: url.searchParams.get("dayz") || undefined,
-      pDrive: url.searchParams.get("pdrive") || undefined,
-    },
-  };
-}
-
-async function handleBuildPlan(url, response) {
-  const projectRoot = url.searchParams.get("project");
-  if (!projectRoot) {
-    sendJson(response, 400, { error: "Missing project query parameter." });
-    return;
-  }
-  const root = path.resolve(projectRoot);
-  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
-    sendJson(response, 404, { error: `Project root does not exist: ${root}` });
-    return;
-  }
-  sendJson(response, 200, buildPboWorkflowPlan({
-    projectRoot: root,
-    addonSource: url.searchParams.get("addon") || undefined,
-    outputRoot: url.searchParams.get("out") || undefined,
-    prefix: url.searchParams.get("prefix") || undefined,
-    toolsRoot: url.searchParams.get("tools") || undefined,
-    dayzRoot: url.searchParams.get("dayz") || undefined,
-    pDrive: url.searchParams.get("pdrive") || undefined,
-    allowDiagnostics: url.searchParams.get("allowDiagnostics") === "true",
-  }));
-}
-
-async function handleBuildRun(url, response) {
-  const projectRoot = url.searchParams.get("project");
-  if (!projectRoot) {
-    sendJson(response, 400, { error: "Missing project query parameter." });
-    return;
-  }
-  const root = path.resolve(projectRoot);
-  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
-    sendJson(response, 404, { error: `Project root does not exist: ${root}` });
-    return;
-  }
-  const timeoutMs = url.searchParams.has("timeoutMs")
-    ? Number(url.searchParams.get("timeoutMs"))
-    : undefined;
-  sendJson(response, 200, runPboWorkflow({
-    projectRoot: root,
-    addonSource: url.searchParams.get("addon") || undefined,
-    outputRoot: url.searchParams.get("out") || undefined,
-    prefix: url.searchParams.get("prefix") || undefined,
-    toolsRoot: url.searchParams.get("tools") || undefined,
-    dayzRoot: url.searchParams.get("dayz") || undefined,
-    pDrive: url.searchParams.get("pdrive") || undefined,
-    allowDiagnostics: url.searchParams.get("allowDiagnostics") === "true",
-    allowNotReady: url.searchParams.get("allowNotReady") === "true",
-    timeoutMs: Number.isFinite(timeoutMs) ? timeoutMs : undefined,
-  }));
-}
-
-async function handleWorkshopPlan(url, response) {
-  const options = resolveWorkshopPublishQuery(url);
-  if (!options.ok) {
-    sendJson(response, options.status, { error: options.error });
-    return;
-  }
-  sendJson(response, 200, buildWorkshopPublishPlan(options.value));
-}
-
-async function handleWorkshopRun(request, response) {
-  if (request.method !== "POST") {
-    sendJson(response, 405, { error: "Use POST for Workshop publish run." });
-    return;
-  }
-  const body = await readJsonBody(request);
-  const projectRoot = body.projectRoot;
-  if (typeof projectRoot !== "string" || !projectRoot.trim()) {
-    sendJson(response, 400, { error: "projectRoot is required." });
-    return;
-  }
-  const root = path.resolve(projectRoot);
-  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
-    sendJson(response, 404, { error: `Project root does not exist: ${root}` });
-    return;
-  }
-  const commandFile = body.commandFile || body.commandJson;
-  const command = body.command ?? (commandFile ? readJsonFile(commandFile) : undefined);
-  sendJson(response, 200, runWorkshopPublishWorkflow({
-    projectRoot: root,
-    addonSource: body.addonSource || undefined,
-    outputRoot: body.outputRoot || undefined,
-    prefix: body.prefix || undefined,
-    toolsRoot: body.toolsRoot || undefined,
-    dayzRoot: body.dayzRoot || undefined,
-    pDrive: body.pDrive || undefined,
-    pboPath: body.pboPath || undefined,
-    contentRoot: body.contentRoot || undefined,
-    workshopItemId: body.workshopItemId || body.itemId || undefined,
-    title: body.title || undefined,
-    changeNote: body.changeNote || undefined,
-    changeNoteFile: body.changeNoteFile || undefined,
-    previewImage: body.previewImage || undefined,
-    command,
-    allowDiagnostics: body.allowDiagnostics === true,
-    allowNotReady: body.allowNotReady === true,
-    requirePbo: body.requirePbo === false ? false : undefined,
-    timeoutMs: Number.isFinite(Number(body.timeoutMs)) ? Number(body.timeoutMs) : undefined,
-  }));
-}
-
-function resolveWorkshopPublishQuery(url) {
-  const projectRoot = url.searchParams.get("project");
-  if (!projectRoot) return { ok: false, status: 400, error: "Missing project query parameter." };
-  const root = path.resolve(projectRoot);
-  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
-    return { ok: false, status: 404, error: `Project root does not exist: ${root}` };
-  }
-  const commandFile = url.searchParams.get("commandJson") || url.searchParams.get("commandFile");
-  return {
-    ok: true,
-    value: {
-      projectRoot: root,
-      addonSource: url.searchParams.get("addon") || undefined,
-      outputRoot: url.searchParams.get("out") || undefined,
-      prefix: url.searchParams.get("prefix") || undefined,
-      toolsRoot: url.searchParams.get("tools") || undefined,
-      dayzRoot: url.searchParams.get("dayz") || undefined,
-      pDrive: url.searchParams.get("pdrive") || undefined,
-      pboPath: url.searchParams.get("pbo") || undefined,
-      contentRoot: url.searchParams.get("content") || undefined,
-      workshopItemId: url.searchParams.get("item") || url.searchParams.get("workshopId") || undefined,
-      title: url.searchParams.get("title") || undefined,
-      changeNote: url.searchParams.get("changeNote") || undefined,
-      changeNoteFile: url.searchParams.get("changeNoteFile") || undefined,
-      previewImage: url.searchParams.get("preview") || undefined,
-      command: commandFile ? readJsonFile(commandFile) : undefined,
-      allowDiagnostics: url.searchParams.get("allowDiagnostics") === "true",
-      requirePbo: url.searchParams.get("requirePbo") === "false" ? false : undefined,
-    },
-  };
-}
-
 async function handleController(url, response) {
   const filePath = url.searchParams.get("file");
   if (!filePath) {
@@ -1343,7 +1365,7 @@ async function handleStringTable(url, response) {
       sendJson(response, 404, { error: `Project root does not exist: ${root}` });
       return;
     }
-    const projectIndex = buildProjectAssetIndex(root);
+    const projectIndex = buildDesktopProjectAssetIndex(root);
     filePath = projectIndex.stringTable.tables[0]?.filePath ?? path.join(root, "stringtable.csv");
   }
 
@@ -1432,7 +1454,7 @@ async function handleFonts(url, response) {
     sendJson(response, 404, { error: `Project root does not exist: ${root}` });
     return;
   }
-  const projectIndex = buildProjectAssetIndex(root);
+  const projectIndex = buildDesktopProjectAssetIndex(root);
   const layoutPath = url.searchParams.get("layout") ? path.resolve(url.searchParams.get("layout")) : null;
   let diagnostics = [];
   if (layoutPath) {
@@ -1518,7 +1540,7 @@ function resolveStyleFileFromRequest(url) {
     };
   }
 
-  const projectIndex = buildProjectAssetIndex(root);
+  const projectIndex = buildDesktopProjectAssetIndex(root);
   return {
     ok: true,
     filePath: projectIndex.styles.files[0]?.filePath ?? path.join(root, "gui", "styles", "styles.styles"),
@@ -1562,40 +1584,6 @@ async function handleAtlasPack(request, response) {
   sendJson(response, 200, packed);
 }
 
-async function handleTextureConvertPlan(request, response) {
-  if (request.method !== "POST") {
-    sendJson(response, 405, { error: "Use POST for texture conversion plans." });
-    return;
-  }
-  const body = await readJsonBody(request);
-  const plan = buildTextureConversionPlan(readTextureConversionBody(body));
-  sendJson(response, plan.ready ? 200 : 409, plan);
-}
-
-async function handleTextureConvertRun(request, response) {
-  if (request.method !== "POST") {
-    sendJson(response, 405, { error: "Use POST for texture conversion runs." });
-    return;
-  }
-  const body = await readJsonBody(request);
-  const run = runTextureConversionWorkflow({
-    ...readTextureConversionBody(body),
-    timeoutMs: Number(body.timeoutMs ?? 120000),
-    allowNotReady: body.allowNotReady === true,
-  });
-  sendJson(response, run.ok ? 200 : 400, run);
-}
-
-function readTextureConversionBody(body) {
-  return {
-    sourceImage: requireBodyString(body.sourceImage, "sourceImage"),
-    outputPath: body.outputPath,
-    format: body.format,
-    toolsRoot: body.toolsRoot,
-    converterPath: body.converterPath,
-    command: body.command,
-  };
-}
 
 async function handleImageAssets(url, response) {
   const projectRoot = url.searchParams.get("project");
@@ -1610,7 +1598,7 @@ async function handleImageAssets(url, response) {
   }
 
   const query = (url.searchParams.get("q") ?? "").toLowerCase();
-  const projectIndex = buildProjectAssetIndex(root);
+  const projectIndex = buildDesktopProjectAssetIndex(root);
   const bundles = [projectIndex, ...(projectIndex.vanillaIndexes ?? [])];
   const items = bundles.flatMap((bundle) => listImageAssetItems(bundle))
     .filter((item) => !query || item.ref.toLowerCase().includes(query) || item.filePath?.toLowerCase().includes(query))
@@ -1705,8 +1693,13 @@ async function handleBoxUpdate(request, response) {
 
   if (Array.isArray(body.position)) updates.push(["position", body.position]);
   if (Array.isArray(body.size)) updates.push(["size", body.size]);
+  if (body.props && typeof body.props === "object") {
+    for (const [key, values] of Object.entries(body.props)) {
+      updates.push([key, Array.isArray(values) ? values : [values]]);
+    }
+  }
   if (!updates.length) {
-    sendJson(response, 400, { error: "Box update requires position and/or size." });
+    sendJson(response, 400, { error: "Box update requires position, size, and/or props." });
     return;
   }
 
@@ -1958,7 +1951,7 @@ async function handleHistoryRestore(request, response) {
 }
 
 function buildLayoutData({ filePath, source, projectRoot, width, height, language = "English", previewState = "normal" }) {
-  const projectIndex = projectRoot ? buildProjectAssetIndex(projectRoot) : null;
+  const projectIndex = projectRoot ? buildDesktopProjectAssetIndex(projectRoot) : null;
   const document = parseLayout(source, { filePath });
   const model = buildLayoutPreviewModel(document, {
     width: Number.isFinite(width) ? width : 1280,
@@ -1969,10 +1962,9 @@ function buildLayoutData({ filePath, source, projectRoot, width, height, languag
   });
   const data = buildPreviewData(model, {
     title: path.basename(filePath),
-    cacheRoot: projectRoot ? path.join(projectRoot, ".dzui/preview-cache") : ".dzui/preview-cache",
   });
   appendValidationDiagnostics(data, document, projectIndex);
-  rewriteImageUrlsForServer(data);
+  rewriteImageUrlsForServer(data, { projectRoot });
   return data;
 }
 
@@ -2016,8 +2008,7 @@ function describeImageAsset({ kind, ref, filePath, root, imageSet = null, textur
     textureRef,
     crop,
     url: null,
-    cachePath: null,
-    decode: null,
+      nativeTexture: null,
   };
   if (!filePath) return descriptor;
 
@@ -2026,16 +2017,23 @@ function describeImageAsset({ kind, ref, filePath, root, imageSet = null, textur
     descriptor.url = `/api/asset?file=${encodeURIComponent(filePath)}`;
     return descriptor;
   }
-  if (ext === ".edds" || ext === ".paa" || ext === ".tga" || ext === ".dds") {
-    const cachePath = path.join(root, ".dzui/preview-cache", `${previewCacheKey(filePath)}.png`);
-    descriptor.cachePath = cachePath;
-    const decoded = ensureDecodedPreviewAsset(filePath, { outputPath: cachePath });
-    descriptor.decode = decoded;
-    if (decoded.ok && fs.existsSync(cachePath)) {
-      descriptor.url = `/api/asset?file=${encodeURIComponent(cachePath)}`;
-    }
+  if (nativeTextureExtensions.has(ext)) {
+    descriptor.nativeTexture = nativeTextureDescriptor(filePath, root);
   }
   return descriptor;
+}
+
+function nativeTextureDescriptor(filePath, projectRoot = null) {
+  const ext = path.extname(filePath).toLowerCase();
+  const params = new URLSearchParams({ file: filePath });
+  if (projectRoot) params.set("project", projectRoot);
+  return {
+    kind: "source-texture",
+    filePath,
+    ext,
+    format: ext.replace(/^\./, ""),
+    url: `/api/texture/native?${params.toString()}`,
+  };
 }
 
 function appendValidationDiagnostics(data, document, projectIndex) {
@@ -2064,6 +2062,74 @@ async function handleAsset(url, response) {
   response.writeHead(200, {
     "Content-Type": mimeFor(absoluteFilePath),
     "Cache-Control": "no-store",
+  });
+  fs.createReadStream(absoluteFilePath).pipe(response);
+}
+
+async function handleNativeTexture(url, response) {
+  const filePath = url.searchParams.get("file");
+  if (!filePath) {
+    sendJson(response, 400, { error: "Missing file query parameter." });
+    return;
+  }
+
+  const absoluteFilePath = path.resolve(filePath);
+  const ext = path.extname(absoluteFilePath).toLowerCase();
+  if (!nativeTextureExtensions.has(ext)) {
+    sendJson(response, 415, { error: `Native texture endpoint does not serve ${ext || "extensionless"} files.` });
+    return;
+  }
+  if (!fs.existsSync(absoluteFilePath) || !fs.statSync(absoluteFilePath).isFile()) {
+    sendJson(response, 404, { error: `Texture file does not exist: ${absoluteFilePath}` });
+    return;
+  }
+
+  const projectRoot = url.searchParams.get("project");
+  const cacheRoot = projectRoot
+    ? path.join(path.resolve(projectRoot), ".dzui", "preview-cache")
+    : path.join(environmentConfigRoot, ".dzui", "preview-cache");
+  const decoded = ensureDecodedPreviewAsset(absoluteFilePath, { cacheRoot });
+  if (!decoded.ok) {
+    sendJson(response, 422, {
+      error: decoded.reason || "Texture preview decode failed.",
+      filePath: absoluteFilePath,
+      format: ext.slice(1),
+      cacheRoot,
+    });
+    return;
+  }
+
+  response.writeHead(200, {
+    "Content-Type": "image/png",
+    "Cache-Control": "no-store",
+    "X-DZUI-Texture-Format": ext.slice(1),
+    "X-DZUI-Texture-Decoder": decoded.decoder ?? (decoded.cached ? "cache" : "unknown"),
+  });
+  fs.createReadStream(decoded.outPath).pipe(response);
+}
+
+async function handleRawNativeTexture(url, response) {
+  const filePath = url.searchParams.get("file");
+  if (!filePath) {
+    sendJson(response, 400, { error: "Missing file query parameter." });
+    return;
+  }
+
+  const absoluteFilePath = path.resolve(filePath);
+  const ext = path.extname(absoluteFilePath).toLowerCase();
+  if (!nativeTextureExtensions.has(ext)) {
+    sendJson(response, 415, { error: `Native texture endpoint does not serve ${ext || "extensionless"} files.` });
+    return;
+  }
+  if (!fs.existsSync(absoluteFilePath) || !fs.statSync(absoluteFilePath).isFile()) {
+    sendJson(response, 404, { error: `Texture file does not exist: ${absoluteFilePath}` });
+    return;
+  }
+
+  response.writeHead(200, {
+    "Content-Type": "application/octet-stream",
+    "Cache-Control": "no-store",
+    "X-DZUI-Texture-Format": ext.slice(1),
   });
   fs.createReadStream(absoluteFilePath).pipe(response);
 }
@@ -2177,18 +2243,17 @@ async function serveStatic(requestPath, response) {
   fs.createReadStream(resolved).pipe(response);
 }
 
-function rewriteImageUrlsForServer(data) {
+function rewriteImageUrlsForServer(data, options = {}) {
+  const projectRoot = options.projectRoot ?? null;
   for (const node of data.nodes) {
-    for (const image of node.images) {
+    for (const image of [...node.images, ...(node.styleRender?.items ?? [])]) {
       if (image.url && image.filePath) {
         image.url = `/api/asset?file=${encodeURIComponent(image.filePath)}`;
       }
-      if (!image.url && image.cachePath && image.filePath) {
-        const decoded = ensureDecodedPreviewAsset(image.filePath, { outputPath: image.cachePath });
-        image.decode = decoded;
-        if (decoded.ok && fs.existsSync(image.cachePath)) {
-          image.url = `/api/asset?file=${encodeURIComponent(image.cachePath)}`;
-        }
+      if (image.nativeTexture?.filePath) {
+        image.nativeTexture = nativeTextureDescriptor(image.nativeTexture.filePath, projectRoot);
+      } else if (!image.url && image.filePath && nativeTextureExtensions.has(path.extname(image.filePath).toLowerCase())) {
+        image.nativeTexture = nativeTextureDescriptor(image.filePath, projectRoot);
       }
     }
   }

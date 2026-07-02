@@ -1117,9 +1117,7 @@ function shouldSkipPluginDir(name, fullPath) {
   const normalized = normalizeSlashes(fullPath).toLowerCase();
   return normalized.includes("/.dzui/history/")
     || normalized.includes("/.dzui/preview-cache/")
-    || normalized.includes("/.dzui/engine-preview/")
-    || normalized.includes("/.dzui/tmp/")
-    || normalized.includes("/.dzui/build/");
+    || normalized.includes("/.dzui/tmp/");
 }
 
 function capabilitiesFor(contributes) {

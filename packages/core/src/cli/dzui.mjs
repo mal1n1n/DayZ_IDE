@@ -7,22 +7,13 @@ import {
   buildLayoutPreviewModel,
   buildLayoutTransformPatch,
   buildLayoutDiffReport,
-  buildEngineLaunchPlan,
-  buildEngineCapturePlan,
-  buildEnginePreviewPlan,
-  buildEnginePreviewWorkspace,
   buildFontCoverageReport,
-  buildPboWorkflowPlan,
   buildPluginRuntimePackage,
   buildPluginRuntimeRegistry,
   buildPluginSdkReport,
-  buildWorkshopPublishPlan,
   buildProjectAssetIndex,
-  buildGeometryDiffReport,
   createWidget,
   deleteWidget,
-  diffPngFiles,
-  discoverDayzTools,
   ensureDecodedPreviewAsset,
   fontRegistryToJson,
   generateControllerSkeleton,
@@ -42,12 +33,6 @@ import {
   reparentWidget,
   resolveLayoutPatchConflicts,
   runPluginRuntimeCommand,
-  runEngineCaptureWorkflow,
-  runPboWorkflow,
-  runWorkshopPublishWorkflow,
-  buildTextureConversionPlan,
-  buildToolchainReadinessReport,
-  runTextureConversionWorkflow,
   styleFileToJson,
   summarizeLayout,
   updateStringTableCsv,
@@ -57,7 +42,6 @@ import {
   validateProject,
   walkWidgets,
   verifyPluginRuntimePackage,
-  writeEnginePreviewWorkspace,
   writePluginRuntimePackage,
   writeProjectSettings,
 } from "../index.mjs";
@@ -77,40 +61,10 @@ try {
   } else if (command === "preview") {
     runPreview(args);
   } else if (command === "decode") {
-    runDecode(args);
-  } else if (command === "texture-convert-plan") {
-    runTextureConvertPlan(args);
-  } else if (command === "texture-convert-run") {
-    runTextureConvertRun(args);
-  } else if (command === "validate") {
+    runDecode(args);  } else if (command === "validate") {
     runValidate(args);
   } else if (command === "validate-project") {
-    runValidateProject(args);
-  } else if (command === "toolchain-readiness") {
-    runToolchainReadiness(args);
-  } else if (command === "engine-plan") {
-    runEnginePlan(args);
-  } else if (command === "engine-launch-plan") {
-    runEngineLaunchPlan(args);
-  } else if (command === "engine-preview-generate") {
-    runEnginePreviewGenerate(args);
-  } else if (command === "engine-geometry-diff") {
-    runEngineGeometryDiff(args);
-  } else if (command === "engine-pixel-diff") {
-    runEnginePixelDiff(args);
-  } else if (command === "engine-capture-plan") {
-    runEngineCapturePlan(args);
-  } else if (command === "engine-capture-run") {
-    runEngineCaptureRun(args);
-  } else if (command === "build-plan") {
-    runBuildPlan(args);
-  } else if (command === "build-run") {
-    runBuildRun(args);
-  } else if (command === "workshop-plan") {
-    runWorkshopPlan(args);
-  } else if (command === "workshop-run") {
-    runWorkshopRun(args);
-  } else if (command === "settings-get") {
+    runValidateProject(args);  } else if (command === "settings-get") {
     runSettingsGet(args);
   } else if (command === "settings-set") {
     runSettingsSet(args);
@@ -255,314 +209,6 @@ function runDecode(args) {
   console.log(decoded.outPath);
 }
 
-function runTextureConvertPlan(args) {
-  const { filePath, options } = parseOptionArgs(args);
-  const plan = buildTextureConversionPlan({
-    sourceImage: filePath,
-    outputPath: options.get("--out"),
-    format: options.get("--format"),
-    toolsRoot: options.get("--tools"),
-    converterPath: options.get("--converter"),
-    command: options.has("--command-json") ? readJsonOption(options.get("--command-json")) : undefined,
-  });
-  console.log(JSON.stringify(plan, null, 2));
-  if (!plan.ready && !options.has("--allow-not-ready")) process.exit(1);
-}
-
-function runTextureConvertRun(args) {
-  const { filePath, options } = parseOptionArgs(args);
-  const run = runTextureConversionWorkflow({
-    sourceImage: filePath,
-    outputPath: options.get("--out"),
-    format: options.get("--format"),
-    toolsRoot: options.get("--tools"),
-    converterPath: options.get("--converter"),
-    command: options.has("--command-json") ? readJsonOption(options.get("--command-json")) : undefined,
-    timeoutMs: Number(options.get("--timeout-ms") ?? 120000),
-    allowNotReady: options.has("--allow-not-ready"),
-  });
-  console.log(JSON.stringify(run, null, 2));
-  if (!run.ok) process.exit(1);
-}
-
-function runValidate(args) {
-  const { positional, options } = parseArgsWithOptions(args);
-  if (positional.length === 0) {
-    console.error("Usage: dzui validate <layout-file> [layout-file...] [--project <project-root>]");
-    process.exit(2);
-  }
-
-  const projectRoot = options.has("--project") ? path.resolve(options.get("--project")) : null;
-  const projectIndex = projectRoot ? buildProjectAssetIndex(projectRoot) : null;
-  let diagnosticCount = 0;
-  for (const rawPath of positional) {
-    const filePath = path.resolve(rawPath);
-    const document = readLayoutDocument(filePath);
-    const diagnostics = validateLayoutDocument(document, { projectIndex });
-    if (diagnostics.length === 0) {
-      console.log(`OK ${path.relative(process.cwd(), filePath) || filePath}`);
-      continue;
-    }
-
-    diagnosticCount += diagnostics.length;
-    console.log(`FAIL ${path.relative(process.cwd(), filePath) || filePath}`);
-    printDiagnostics(diagnostics);
-  }
-
-  if (diagnosticCount > 0) process.exit(1);
-}
-
-function runValidateProject(args) {
-  const { positional } = parseArgsWithOptions(args);
-  const root = path.resolve(positional[0] ?? ".");
-  const report = validateProject(root);
-  console.log(JSON.stringify(report, null, 2));
-  if (report.diagnosticCount > 0) process.exit(1);
-}
-
-function runToolchainReadiness(args) {
-  const { positional, options } = parseArgsWithOptions(args);
-  const report = buildToolchainReadinessReport({
-    projectRoot: positional[0] ?? options.get("--project"),
-    layoutPath: options.get("--layout"),
-    addonSource: options.get("--addon"),
-    outputRoot: options.get("--out"),
-    prefix: options.get("--prefix"),
-    toolsRoot: options.get("--tools"),
-    dayzRoot: options.get("--dayz"),
-    pDrive: options.get("--pdrive"),
-    pboPath: options.get("--pbo"),
-    contentRoot: options.get("--content"),
-    workshopItemId: options.get("--item") ?? options.get("--workshop-id"),
-    title: options.get("--title"),
-    changeNote: options.get("--change-note"),
-    changeNoteFile: options.get("--change-note-file"),
-    previewImage: options.get("--preview"),
-    workshopCommand: options.has("--workshop-command-json") ? readJsonOption(options.get("--workshop-command-json")) : undefined,
-    sourceImage: options.get("--texture"),
-    textureOutputPath: options.get("--texture-out"),
-    textureFormat: options.get("--texture-format"),
-    converterPath: options.get("--converter"),
-    textureCommand: options.has("--texture-command-json") ? readJsonOption(options.get("--texture-command-json")) : undefined,
-    captureCommand: options.has("--capture-command-json") ? readJsonOption(options.get("--capture-command-json")) : undefined,
-    captureOutputRoot: options.get("--capture-out"),
-    expectedScreenshotPath: options.get("--expected"),
-    actualScreenshotPath: options.get("--actual"),
-    geometryDumpPath: options.get("--geometry"),
-    pixelDiffPath: options.get("--pixel-diff"),
-    allowDiagnostics: options.has("--allow-diagnostics"),
-    requirePbo: options.has("--no-require-pbo") ? false : undefined,
-  });
-  console.log(JSON.stringify(report, null, 2));
-  if (!report.ready && !options.has("--allow-not-ready")) process.exit(1);
-}
-
-function runEnginePlan(args) {
-  const { options } = parseArgsWithOptions(args);
-  const tools = discoverDayzTools({
-    toolsRoot: options.get("--tools"),
-    dayzRoot: options.get("--dayz"),
-    pDrive: options.get("--pdrive"),
-  });
-  const plan = buildEnginePreviewPlan({
-    projectRoot: options.get("--project"),
-    layoutPath: options.get("--layout"),
-    tools,
-  });
-  console.log(JSON.stringify(plan, null, 2));
-}
-
-function runEngineLaunchPlan(args) {
-  const { options } = parseArgsWithOptions(args);
-  const tools = discoverDayzTools({
-    toolsRoot: options.get("--tools"),
-    dayzRoot: options.get("--dayz"),
-    pDrive: options.get("--pdrive"),
-  });
-  const plan = buildEngineLaunchPlan({
-    mode: options.get("--mode"),
-    projectRoot: options.get("--project"),
-    layoutPath: options.get("--layout"),
-    missionPath: options.get("--mission"),
-    tools,
-  });
-  console.log(JSON.stringify(plan, null, 2));
-  if (!plan.ready) process.exit(1);
-}
-
-function runEnginePreviewGenerate(args) {
-  const { options } = parseArgsWithOptions(args);
-  const workspaceOptions = {
-    projectRoot: requiredOption(options, "--project"),
-    layoutPath: requiredOption(options, "--layout"),
-    previewRoot: options.get("--out"),
-    missionName: options.get("--mission-name"),
-    worldName: options.get("--world"),
-    menuClass: options.get("--menu-class"),
-    width: options.has("--width") ? Number(options.get("--width")) : undefined,
-    height: options.has("--height") ? Number(options.get("--height")) : undefined,
-    language: options.get("--language"),
-    toolsRoot: options.get("--tools"),
-    dayzRoot: options.get("--dayz"),
-    pDrive: options.get("--pdrive"),
-  };
-  const result = options.has("--dry-run")
-    ? buildEnginePreviewWorkspace(workspaceOptions)
-    : writeEnginePreviewWorkspace(workspaceOptions);
-  console.log(JSON.stringify(result, null, 2));
-}
-
-function runEngineGeometryDiff(args) {
-  const { options } = parseArgsWithOptions(args);
-  const layoutPath = path.resolve(requiredOption(options, "--layout"));
-  const dumpPath = path.resolve(requiredOption(options, "--dump"));
-  const projectRoot = options.has("--project") ? path.resolve(options.get("--project")) : null;
-  const projectIndex = projectRoot ? buildProjectAssetIndex(projectRoot) : null;
-  const document = readLayoutDocument(layoutPath);
-  const model = buildLayoutPreviewModel(document, {
-    width: Number(options.get("--width") ?? 1280),
-    height: Number(options.get("--height") ?? 720),
-    projectIndex,
-    language: options.get("--language") ?? "English",
-  });
-  const engineDump = JSON.parse(fs.readFileSync(dumpPath, "utf8"));
-  const report = buildGeometryDiffReport(model, engineDump, {
-    tolerancePx: Number(options.get("--tolerance") ?? 1),
-  });
-  console.log(JSON.stringify(report, null, 2));
-  if (!report.passed && !options.has("--allow-diff")) process.exit(1);
-}
-
-function runEnginePixelDiff(args) {
-  const { options } = parseArgsWithOptions(args);
-  const report = diffPngFiles({
-    expectedPath: requiredOption(options, "--expected"),
-    actualPath: requiredOption(options, "--actual"),
-    diffPath: options.get("--diff"),
-    tolerance: Number(options.get("--tolerance") ?? 0),
-    ignoreAlpha: options.has("--ignore-alpha"),
-  });
-  console.log(JSON.stringify(report, null, 2));
-  if (!report.passed && !options.has("--allow-diff")) process.exit(1);
-}
-
-function runEngineCapturePlan(args) {
-  const { options } = parseArgsWithOptions(args);
-  const plan = buildEngineCapturePlan(readCaptureOptions(options));
-  console.log(JSON.stringify(plan, null, 2));
-  if (!plan.ready) process.exit(1);
-}
-
-function runEngineCaptureRun(args) {
-  const { options } = parseArgsWithOptions(args);
-  const run = runEngineCaptureWorkflow({
-    ...readCaptureOptions(options),
-    timeoutMs: options.has("--timeout-ms") ? Number(options.get("--timeout-ms")) : undefined,
-    waitMs: options.has("--wait-ms") ? Number(options.get("--wait-ms")) : undefined,
-    allowNotReady: options.has("--allow-not-ready"),
-  });
-  console.log(JSON.stringify(run, null, 2));
-  if (!run.ok) process.exit(1);
-}
-
-function readCaptureOptions(options) {
-  return {
-    projectRoot: requiredOption(options, "--project"),
-    layoutPath: requiredOption(options, "--layout"),
-    command: options.has("--command-json") ? readJsonOption(options.get("--command-json")) : undefined,
-    outputRoot: options.get("--out"),
-    expectedScreenshotPath: options.get("--expected"),
-    actualScreenshotPath: options.get("--actual"),
-    geometryDumpPath: options.get("--geometry"),
-    pixelDiffPath: options.get("--pixel-diff"),
-    geometryTolerancePx: options.has("--geometry-tolerance") ? Number(options.get("--geometry-tolerance")) : undefined,
-    pixelTolerance: options.has("--pixel-tolerance") ? Number(options.get("--pixel-tolerance")) : undefined,
-    toolsRoot: options.get("--tools"),
-    dayzRoot: options.get("--dayz"),
-    pDrive: options.get("--pdrive"),
-    width: options.has("--width") ? Number(options.get("--width")) : undefined,
-    height: options.has("--height") ? Number(options.get("--height")) : undefined,
-    language: options.get("--language"),
-  };
-}
-
-function runBuildPlan(args) {
-  const { positional, options } = parseArgsWithOptions(args);
-  const projectRoot = path.resolve(positional[0] ?? options.get("--project") ?? ".");
-  const plan = buildPboWorkflowPlan({
-    projectRoot,
-    addonSource: options.get("--addon"),
-    outputRoot: options.get("--out"),
-    prefix: options.get("--prefix"),
-    toolsRoot: options.get("--tools"),
-    dayzRoot: options.get("--dayz"),
-    pDrive: options.get("--pdrive"),
-    allowDiagnostics: options.has("--allow-diagnostics"),
-  });
-  console.log(JSON.stringify(plan, null, 2));
-  if (!plan.ready) process.exit(1);
-}
-
-function runBuildRun(args) {
-  const { positional, options } = parseArgsWithOptions(args);
-  const projectRoot = path.resolve(positional[0] ?? options.get("--project") ?? ".");
-  const run = runPboWorkflow({
-    projectRoot,
-    addonSource: options.get("--addon"),
-    outputRoot: options.get("--out"),
-    prefix: options.get("--prefix"),
-    toolsRoot: options.get("--tools"),
-    dayzRoot: options.get("--dayz"),
-    pDrive: options.get("--pdrive"),
-    allowDiagnostics: options.has("--allow-diagnostics"),
-    allowNotReady: options.has("--allow-not-ready"),
-    timeoutMs: options.has("--timeout-ms") ? Number(options.get("--timeout-ms")) : undefined,
-  });
-  console.log(JSON.stringify(run, null, 2));
-  if (!run.ok) process.exit(1);
-}
-
-function runWorkshopPlan(args) {
-  const plan = buildWorkshopPublishPlan(readWorkshopOptions(args));
-  console.log(JSON.stringify(plan, null, 2));
-  if (!plan.ready) process.exit(1);
-}
-
-function runWorkshopRun(args) {
-  const run = runWorkshopPublishWorkflow(readWorkshopOptions(args));
-  console.log(JSON.stringify(run, null, 2));
-  if (!run.ok) process.exit(1);
-}
-
-function readWorkshopOptions(args) {
-  const { positional, options } = parseArgsWithOptions(args);
-  return {
-    projectRoot: path.resolve(positional[0] ?? options.get("--project") ?? "."),
-    addonSource: options.get("--addon"),
-    outputRoot: options.get("--out"),
-    prefix: options.get("--prefix"),
-    toolsRoot: options.get("--tools"),
-    dayzRoot: options.get("--dayz"),
-    pDrive: options.get("--pdrive"),
-    pboPath: options.get("--pbo"),
-    contentRoot: options.get("--content"),
-    workshopItemId: options.get("--item") ?? options.get("--workshop-id"),
-    title: options.get("--title"),
-    changeNote: options.get("--change-note"),
-    changeNoteFile: options.get("--change-note-file"),
-    previewImage: options.get("--preview"),
-    command: options.has("--command-json") ? readJsonOption(options.get("--command-json")) : undefined,
-    allowDiagnostics: options.has("--allow-diagnostics"),
-    allowNotReady: options.has("--allow-not-ready"),
-    timeoutMs: options.has("--timeout-ms") ? Number(options.get("--timeout-ms")) : undefined,
-  };
-}
-
-function runSettingsGet(args) {
-  const { positional, options } = parseArgsWithOptions(args);
-  const projectRoot = path.resolve(positional[0] ?? options.get("--project") ?? ".");
-  console.log(JSON.stringify(readProjectSettings(projectRoot), null, 2));
-}
 
 function runSettingsSet(args) {
   const { positional, options } = parseArgsWithOptions(args);
@@ -576,24 +222,6 @@ function runSettingsSet(args) {
   if (options.has("--state")) preview.state = options.get("--state");
   if (options.has("--preview-state")) preview.state = options.get("--preview-state");
   if (Object.keys(preview).length > 0) patch.preview = preview;
-  const build = {};
-  if (options.has("--addon")) build.addonSource = options.get("--addon");
-  if (options.has("--out")) build.outputRoot = options.get("--out");
-  if (options.has("--prefix")) build.prefix = options.get("--prefix");
-  if (options.has("--tools")) build.toolsRoot = options.get("--tools");
-  if (options.has("--dayz")) build.dayzRoot = options.get("--dayz");
-  if (options.has("--pdrive")) build.pDrive = options.get("--pdrive");
-  if (options.has("--allow-diagnostics")) build.allowDiagnostics = true;
-  if (options.has("--timeout-ms")) build.timeoutMs = Number(options.get("--timeout-ms"));
-  if (Object.keys(build).length > 0) patch.build = build;
-  const workshop = {};
-  if (options.has("--workshop-id")) workshop.itemId = options.get("--workshop-id");
-  if (options.has("--workshop-title")) workshop.title = options.get("--workshop-title");
-  if (options.has("--change-note")) workshop.changeNote = options.get("--change-note");
-  if (options.has("--preview")) workshop.previewImage = options.get("--preview");
-  if (options.has("--content")) workshop.contentRoot = options.get("--content");
-  if (options.has("--command-json")) workshop.commandJson = options.get("--command-json");
-  if (Object.keys(workshop).length > 0) patch.workshop = workshop;
   console.log(JSON.stringify(writeProjectSettings(projectRoot, patch), null, 2));
 }
 
@@ -1184,24 +812,10 @@ function printHelp() {
   dzui inspect <layout-file>
   dzui preview <layout-file> [--project <project-root>] [--out <html-file>] [--width <px>] [--height <px>] [--language <name>] [--state <normal|hover|selected|disabled>]
   dzui decode <asset-file.edds|.dds|.paa|.tga> [--out <png-file>] [--texconv <texconv.exe>] [--decoder-json <decoder.json>]
-  dzui texture-convert-plan <source.png> [--out <output.paa|output.edds>] [--format <paa|edds>] [--tools <DayZ Tools>] [--converter <ImageToPAA.exe>] [--command-json <command.json>] [--allow-not-ready]
-  dzui texture-convert-run <source.png> [--out <output.paa|output.edds>] [--format <paa|edds>] [--tools <DayZ Tools>] [--converter <ImageToPAA.exe>] [--command-json <command.json>] [--allow-not-ready] [--timeout-ms <ms>]
   dzui validate <layout-file> [layout-file...] [--project <project-root>]
   dzui validate-project <project-root>
-  dzui toolchain-readiness [project-root] [--layout <layout-file>] [--tools <DayZ Tools>] [--dayz <DayZ root>] [--pdrive <P:>] [--texture <source.png>] [--texture-out <output.paa>] [--item <workshop-id>] [--change-note <text>] [--allow-diagnostics] [--allow-not-ready]
-  dzui engine-plan [--project <project-root>] [--layout <layout-file>] [--tools <DayZ Tools>] [--dayz <DayZ root>] [--pdrive <P:>]
-  dzui engine-launch-plan [--mode <dayzDiag|workbench>] [--project <project-root>] [--layout <layout-file>] [--mission <mission-folder>] [--tools <DayZ Tools>] [--dayz <DayZ root>] [--pdrive <P:>]
-  dzui engine-preview-generate --project <project-root> --layout <layout-file> [--out <preview-root>] [--world <world>] [--mission-name <name>] [--menu-class <Class>] [--width <px>] [--height <px>] [--language <name>] [--dry-run]
-  dzui engine-geometry-diff --layout <layout-file> --dump <engine-geometry.json> [--project <root>] [--width <px>] [--height <px>] [--language <name>] [--tolerance <px>] [--allow-diff]
-  dzui engine-pixel-diff --expected <dzui.png> --actual <engine.png> [--diff <diff.png>] [--tolerance <0-255>] [--ignore-alpha] [--allow-diff]
-  dzui engine-capture-plan --project <root> --layout <layout-file> [--command-json <command.json>] [--out <capture-root>]
-  dzui engine-capture-run --project <root> --layout <layout-file> [--command-json <command.json>] [--out <capture-root>] [--timeout-ms <ms>] [--wait-ms <ms>]
-  dzui build-plan <project-root> [--addon <addon-source>] [--out <output-root>] [--prefix <prefix>] [--tools <DayZ Tools>] [--allow-diagnostics]
-  dzui build-run <project-root> [--addon <addon-source>] [--out <output-root>] [--prefix <prefix>] [--tools <DayZ Tools>] [--allow-diagnostics] [--allow-not-ready] [--timeout-ms <ms>]
-  dzui workshop-plan <project-root> [--pbo <file.pbo>] [--content <workshop-content-root>] [--item <workshop-id>] [--change-note <text>] [--change-note-file <txt>] [--command-json <command.json>] [--allow-diagnostics]
-  dzui workshop-run <project-root> [--pbo <file.pbo>] [--content <workshop-content-root>] [--item <workshop-id>] [--change-note <text>] [--change-note-file <txt>] [--command-json <command.json>] [--allow-diagnostics] [--allow-not-ready] [--timeout-ms <ms>]
   dzui settings-get <project-root>
-  dzui settings-set <project-root> [--layout <layout-file>] [--width <px>] [--height <px>] [--language <name>] [--state <normal|hover|selected|disabled>] [--addon <addon-source>] [--out <output-root>] [--prefix <prefix>] [--tools <DayZ Tools>] [--allow-diagnostics] [--timeout-ms <ms>] [--workshop-id <id>] [--workshop-title <title>] [--change-note <text>] [--preview <image>] [--content <root>] [--command-json <file>]
+  dzui settings-set <project-root> [--layout <layout-file>] [--width <px>] [--height <px>] [--language <name>] [--state <normal|hover|selected|disabled>]
   dzui plugins <project-root> [--allow-diagnostics]
   dzui plugins-runtime <project-root> [--allow-diagnostics]
   dzui plugins-package <project-root> [--out <json-file>] [--write] [--sign-private-key <pem-file>] [--sign-public-key <pem-file>] [--sign-key-id <id>] [--allow-diagnostics]

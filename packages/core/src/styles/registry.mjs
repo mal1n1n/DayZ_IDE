@@ -156,19 +156,33 @@ const stylePropertySchemas = [
     previewSupport: "applied",
     description: "Image or imageset reference.",
   },
+  {
+    key: "imageset",
+    type: "imageset-ref",
+    minValues: 1,
+    maxValues: 1,
+    previewSupport: "applied",
+    description: "Workbench widget style ImageSet reference.",
+  },
+  {
+    key: "stylecolor",
+    type: "raw-values",
+    minValues: 1,
+    maxValues: 1,
+    previewSupport: "metadata",
+    description: "Workbench widget style packed color value.",
+  },
 ];
 
 const schemaByKey = new Map(stylePropertySchemas.map((schema) => [schema.key, schema]));
 
 export function parseStyleFile(content, options = {}) {
   const styles = [];
-  const seen = new Set();
   const pattern = /\b([A-Za-z_][A-Za-z0-9_]*StyleClass|StyleClass|[A-Za-z_][A-Za-z0-9_]*)\s+(?:"([^"]+)"|([A-Za-z_][A-Za-z0-9_./:-]*))\s*\{/g;
 
   for (const match of content.matchAll(pattern)) {
     const name = match[2] ?? match[3];
-    if (!name || seen.has(name.toLowerCase())) continue;
-    seen.add(name.toLowerCase());
+    if (!name) continue;
     const openBrace = content.indexOf("{", (match.index ?? 0) + match[0].length - 1);
     const closeBrace = findMatchingBrace(content, openBrace);
     const bodyStart = openBrace >= 0 ? openBrace + 1 : match.index + match[0].length;
@@ -188,12 +202,144 @@ export function parseStyleFile(content, options = {}) {
       props: parseStyleProps(content, bodyStart, bodyEnd),
     });
   }
+  styles.push(...parseXmlStyleFile(content));
 
   return {
     filePath: options.filePath ?? null,
     virtualPath: options.virtualPath ?? null,
     styles,
   };
+}
+
+function parseXmlStyleFile(content) {
+  const styles = [];
+  const widgetPattern = /<Widget\b([^>]*)>([\s\S]*?)<\/Widget>/gi;
+  for (const widgetMatch of content.matchAll(widgetPattern)) {
+    const widgetAttrs = parseXmlAttrs(widgetMatch[1] ?? "");
+    const widgetType = widgetAttrs.Name ?? widgetAttrs.name ?? null;
+    const widgetBody = widgetMatch[2] ?? "";
+    const widgetBodyStart = (widgetMatch.index ?? 0) + widgetMatch[0].indexOf(widgetBody);
+    const stylePattern = /<Style\b([^>]*?)(?:\/>|>([\s\S]*?)<\/Style>)/gi;
+    for (const styleMatch of widgetBody.matchAll(stylePattern)) {
+      const styleAttrs = parseXmlAttrs(styleMatch[1] ?? "");
+      const name = styleAttrs.Name ?? styleAttrs.name ?? null;
+      if (!name) continue;
+      const styleBody = styleMatch[2] ?? "";
+      const styleStart = widgetBodyStart + (styleMatch.index ?? 0);
+      const bodyStart = styleBody
+        ? widgetBodyStart + (styleMatch.index ?? 0) + styleMatch[0].indexOf(styleBody)
+        : styleStart + styleMatch[0].length;
+      const bodyEnd = styleBody ? bodyStart + styleBody.length : bodyStart;
+      const xmlStyle = {
+        widgetType,
+        imageSet: styleAttrs.ImageSet ?? styleAttrs.imageset ?? null,
+        font: styleAttrs.Font ?? styleAttrs.font ?? null,
+        color: styleAttrs.Color ?? styleAttrs.color ?? null,
+        attrs: styleAttrs,
+        states: parseXmlStyleStates(styleBody, content, bodyStart),
+      };
+      styles.push({
+        name,
+        typeClass: "XmlWidgetStyle",
+        widgetType,
+        line: lineForOffset(content, styleStart),
+        span: {
+          start: styleStart,
+          end: styleStart + styleMatch[0].length,
+        },
+        bodySpan: {
+          start: bodyStart,
+          end: bodyEnd,
+        },
+        props: xmlStyleProps(xmlStyle, content, styleStart),
+        xmlStyle,
+      });
+    }
+  }
+  return styles;
+}
+
+function parseXmlStyleStates(styleBody, fullContent, bodyStart) {
+  const states = [];
+  const statePattern = /<State\b([^>]*?)(?:\/>|>([\s\S]*?)<\/State>)/gi;
+  for (const stateMatch of styleBody.matchAll(statePattern)) {
+    const stateAttrs = parseXmlAttrs(stateMatch[1] ?? "");
+    const stateName = stateAttrs.Name ?? stateAttrs.name ?? "Normal";
+    const stateBody = stateMatch[2] ?? "";
+    const stateStart = bodyStart + (stateMatch.index ?? 0);
+    const items = [];
+    const itemPattern = /<Item\b([^>]*?)(?:\/>|>)/gi;
+    for (const itemMatch of stateBody.matchAll(itemPattern)) {
+      const attrs = parseXmlAttrs(itemMatch[1] ?? "");
+      const itemName = attrs.Name ?? attrs.name ?? null;
+      const image = attrs.Image ?? attrs.image ?? null;
+      if (!itemName && !image) continue;
+      const itemStart = stateStart + stateMatch[0].indexOf(stateBody) + (itemMatch.index ?? 0);
+      items.push({
+        name: itemName,
+        image,
+        attrs,
+        line: lineForOffset(fullContent, itemStart),
+        span: {
+          start: itemStart,
+          end: itemStart + itemMatch[0].length,
+        },
+      });
+    }
+    states.push({
+      name: stateName,
+      attrs: stateAttrs,
+      items,
+      line: lineForOffset(fullContent, stateStart),
+      span: {
+        start: stateStart,
+        end: stateStart + stateMatch[0].length,
+      },
+    });
+  }
+  return states;
+}
+
+function xmlStyleProps(xmlStyle, content, styleStart) {
+  const props = [];
+  if (xmlStyle.font) {
+    props.push(xmlStyleProp("font", [xmlStyle.font], content, styleStart));
+  }
+  if (xmlStyle.imageSet) {
+    props.push(xmlStyleProp("imageset", [xmlStyle.imageSet], content, styleStart));
+  }
+  if (xmlStyle.color !== null && xmlStyle.color !== undefined && xmlStyle.color !== "") {
+    props.push(xmlStyleProp("stylecolor", [xmlStyle.color], content, styleStart));
+  }
+  return props;
+}
+
+function xmlStyleProp(key, values, content, styleStart) {
+  return {
+    key,
+    values,
+    raw: `${key} ${values.join(" ")}`,
+    line: lineForOffset(content, styleStart),
+    span: { start: styleStart, end: styleStart },
+  };
+}
+
+function parseXmlAttrs(text) {
+  const attrs = {};
+  const pattern = /([A-Za-z_][A-Za-z0-9_:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s/>]+))/g;
+  for (const match of text.matchAll(pattern)) {
+    attrs[match[1]] = unescapeXmlAttr(match[2] ?? match[3] ?? match[4] ?? "");
+  }
+  return attrs;
+}
+
+function unescapeXmlAttr(value) {
+  return String(value)
+    .replace(/&quot;/g, "\"")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
 }
 
 function parseStyleProps(content, bodyStart, bodyEnd) {
@@ -260,9 +406,23 @@ function findMatchingBrace(content, openBrace) {
   return -1;
 }
 
-export function buildStyleRegistry(root, files) {
+export function buildStyleRegistry(root, files, options = {}) {
   const filesByPath = [];
   const byName = new Map();
+  const byWidgetAndName = new Map();
+
+  for (const external of options.externalRegistries ?? []) {
+    for (const parsed of external?.files ?? []) {
+      filesByPath.push(parsed);
+      for (const style of parsed.styles ?? []) {
+        registerStyle(byName, byWidgetAndName, {
+          ...style,
+          filePath: style.filePath ?? parsed.filePath ?? null,
+          virtualPath: style.virtualPath ?? parsed.virtualPath ?? null,
+        });
+      }
+    }
+  }
 
   for (const filePath of files.filter((candidate) => path.extname(candidate).toLowerCase() === ".styles")) {
     const parsed = parseStyleFile(fs.readFileSync(filePath, "utf8"), {
@@ -271,7 +431,7 @@ export function buildStyleRegistry(root, files) {
     });
     filesByPath.push(parsed);
     for (const style of parsed.styles) {
-      byName.set(style.name.toLowerCase(), {
+      registerStyle(byName, byWidgetAndName, {
         ...style,
         filePath,
         virtualPath: parsed.virtualPath,
@@ -282,13 +442,16 @@ export function buildStyleRegistry(root, files) {
   const registry = {
     files: filesByPath,
     byName,
+    byWidgetAndName,
     diagnostics: [],
     diagnosticCount: 0,
-    has(name) {
-      return byName.has(String(name).toLowerCase());
+    has(name, lookup = {}) {
+      return Boolean(this.get(name, lookup));
     },
-    get(name) {
-      return byName.get(String(name).toLowerCase()) ?? null;
+    get(name, lookup = {}) {
+      const widgetType = typeof lookup === "string" ? lookup : lookup?.widgetType;
+      const exact = widgetType ? byWidgetAndName.get(styleLookupKey(widgetType, name)) : null;
+      return exact ?? byName.get(normalizeStyleName(name)) ?? null;
     },
   };
   registry.diagnostics = filesByPath.flatMap((parsed) => validateStyleFile(parsed, { registry }));
@@ -341,22 +504,24 @@ export function getStyleParentNames(style) {
   return getStyleParentRefs(style).map((ref) => ref.name);
 }
 
-export function resolveStyleInheritance(registryOrParsed, styleName) {
+export function resolveStyleInheritance(registryOrParsed, styleName, options = {}) {
   const registry = normalizeStyleRegistry(registryOrParsed);
   const diagnostics = [];
   const chain = [];
   const active = [];
   const visited = new Set();
   const requested = String(styleName ?? "").trim();
+  const requestedWidgetType = normalizeWidgetType(options.widgetType);
 
-  function visit(name, referrer = null, refProp = null) {
+  function visit(name, referrer = null, refProp = null, widgetType = requestedWidgetType) {
     const normalized = normalizeStyleName(name);
     if (!normalized) return;
-    const activeIndex = active.indexOf(normalized);
+    const lookupKey = `${normalizeWidgetType(widgetType) ?? ""}:${normalized}`;
+    const activeIndex = active.indexOf(lookupKey);
     if (activeIndex >= 0) {
-      const cycle = [...active.slice(activeIndex), normalized]
-        .map((candidate) => registry.get(candidate)?.name ?? candidate);
-      diagnostics.push(makeStyleDiagnostic(registry.get(name) ?? registry.get(referrer), refProp, {
+      const cycle = [...active.slice(activeIndex), lookupKey]
+        .map((candidate) => candidate.split(":").pop());
+      diagnostics.push(makeStyleDiagnostic(registry.get(name, { widgetType }) ?? registry.get(referrer, { widgetType }), refProp, {
         code: "style.inheritance.cycle",
         severity: "error",
         message: `Style inheritance cycle detected: ${cycle.join(" -> ")}.`,
@@ -368,11 +533,11 @@ export function resolveStyleInheritance(registryOrParsed, styleName) {
       }));
       return;
     }
-    if (visited.has(normalized)) return;
+    if (visited.has(lookupKey)) return;
 
-    const style = registry.get(name);
+    const style = registry.get(name, { widgetType });
     if (!style) {
-      diagnostics.push(makeStyleDiagnostic(registry.get(referrer), refProp, {
+      diagnostics.push(makeStyleDiagnostic(registry.get(referrer, { widgetType }), refProp, {
         code: "style.inheritance.missing-parent",
         severity: "error",
         message: `Style "${referrer}" inherits missing style "${name}".`,
@@ -384,10 +549,10 @@ export function resolveStyleInheritance(registryOrParsed, styleName) {
       return;
     }
 
-    visited.add(normalized);
-    active.push(normalized);
+    visited.add(lookupKey);
+    active.push(lookupKey);
     for (const parent of getStyleParentRefs(style)) {
-      visit(parent.name, style.name, parent.prop);
+      visit(parent.name, style.name, parent.prop, style.widgetType ?? widgetType);
     }
     active.pop();
     chain.push(style);
@@ -395,7 +560,7 @@ export function resolveStyleInheritance(registryOrParsed, styleName) {
 
   visit(requested);
 
-  const sourceStyle = registry.get(requested);
+  const sourceStyle = registry.get(requested, { widgetType: requestedWidgetType });
   const byProperty = new Map();
   for (const style of chain) {
     for (const prop of style.props ?? []) {
@@ -421,11 +586,13 @@ export function resolveStyleInheritance(registryOrParsed, styleName) {
     chain: chain.map((style) => ({
       name: style.name,
       typeClass: style.typeClass,
+      widgetType: style.widgetType ?? null,
       line: style.line,
       filePath: style.filePath ?? null,
       virtualPath: style.virtualPath ?? null,
     })),
     properties: [...byProperty.values()],
+    xmlStyle: mergeXmlStyleChain(chain),
     diagnostics,
   };
 }
@@ -439,7 +606,7 @@ export function validateStyleFile(parsed, options = {}) {
     for (const prop of style.props ?? []) {
       diagnostics.push(...validateStyleProperty(style, prop, parsed, options));
     }
-    diagnostics.push(...resolveStyleInheritance(registry, style.name).diagnostics);
+    diagnostics.push(...resolveStyleInheritance(registry, style.name, { widgetType: style.widgetType }).diagnostics);
   }
 
   return diagnostics;
@@ -463,7 +630,7 @@ export function styleFileToJson(parsed, options = {}) {
   return {
     ...parsed,
     styles: (parsed.styles ?? []).map((style) => {
-      const resolved = resolveStyleInheritance(registry, style.name);
+      const resolved = resolveStyleInheritance(registry, style.name, { widgetType: style.widgetType });
       return {
         ...style,
         parentStyles: getStyleParentNames(style),
@@ -632,8 +799,9 @@ function normalizeStyleRegistry(registryOrParsed) {
   const parsedFilePath = Array.isArray(registryOrParsed) ? null : registryOrParsed?.filePath ?? null;
   const parsedVirtualPath = Array.isArray(registryOrParsed) ? null : registryOrParsed?.virtualPath ?? null;
   const byName = new Map();
+  const byWidgetAndName = new Map();
   for (const style of styles) {
-    byName.set(normalizeStyleName(style.name), {
+    registerStyle(byName, byWidgetAndName, {
       ...style,
       filePath: style.filePath ?? parsedFilePath,
       virtualPath: style.virtualPath ?? parsedVirtualPath,
@@ -641,13 +809,57 @@ function normalizeStyleRegistry(registryOrParsed) {
   }
   return {
     byName,
-    has(name) {
-      return byName.has(normalizeStyleName(name));
+    byWidgetAndName,
+    has(name, lookup = {}) {
+      return Boolean(this.get(name, lookup));
     },
-    get(name) {
-      return byName.get(normalizeStyleName(name)) ?? null;
+    get(name, lookup = {}) {
+      const widgetType = typeof lookup === "string" ? lookup : lookup?.widgetType;
+      return (widgetType ? byWidgetAndName.get(styleLookupKey(widgetType, name)) : null)
+        ?? byName.get(normalizeStyleName(name))
+        ?? null;
     },
   };
+}
+
+function registerStyle(byName, byWidgetAndName, style) {
+  byName.set(normalizeStyleName(style.name), style);
+  if (style.widgetType) {
+    byWidgetAndName.set(styleLookupKey(style.widgetType, style.name), style);
+  }
+}
+
+function mergeXmlStyleChain(chain) {
+  const xmlStyles = chain.map((style) => style.xmlStyle).filter(Boolean);
+  if (xmlStyles.length === 0) return null;
+  const merged = {
+    widgetType: xmlStyles.at(-1).widgetType ?? null,
+    imageSet: null,
+    font: null,
+    color: null,
+    states: [],
+  };
+  const stateByName = new Map();
+  for (const xmlStyle of xmlStyles) {
+    merged.widgetType = xmlStyle.widgetType ?? merged.widgetType;
+    merged.imageSet = xmlStyle.imageSet ?? merged.imageSet;
+    merged.font = xmlStyle.font || merged.font;
+    merged.color = xmlStyle.color ?? merged.color;
+    for (const state of xmlStyle.states ?? []) {
+      const key = normalizeStyleName(state.name);
+      if (!stateByName.has(key)) {
+        stateByName.set(key, { ...state, items: [] });
+      }
+      const target = stateByName.get(key);
+      const itemsByName = new Map(target.items.map((item) => [normalizeStyleName(item.name ?? item.image), item]));
+      for (const item of state.items ?? []) {
+        itemsByName.set(normalizeStyleName(item.name ?? item.image), item);
+      }
+      target.items = [...itemsByName.values()];
+    }
+  }
+  merged.states = [...stateByName.values()];
+  return merged;
 }
 
 function makeStyleDiagnostic(style, prop, { code, severity, message, context }) {
@@ -685,4 +897,13 @@ function normalizeStyleKey(key) {
 
 function normalizeStyleName(name) {
   return String(name ?? "").trim().toLowerCase();
+}
+
+function normalizeWidgetType(widgetType) {
+  const value = String(widgetType ?? "").trim();
+  return value ? value.replace(/Class$/i, "") : null;
+}
+
+function styleLookupKey(widgetType, styleName) {
+  return `${normalizeWidgetType(widgetType) ?? ""}:${normalizeStyleName(styleName)}`;
 }

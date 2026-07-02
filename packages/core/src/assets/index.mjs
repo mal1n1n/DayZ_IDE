@@ -19,11 +19,13 @@ export function buildProjectAssetIndex(root, options = {}) {
   const metaByGuidName = new Map();
   const edds = [];
   const imageSets = [];
-  const styles = buildStyleRegistry(root, files);
   const fonts = buildFontRegistry(root, files);
   const stringTable = buildStringTableIndex(root, files);
   const scripts = buildScriptIndex(root, files);
   const vanillaIndexes = buildVanillaAssetIndexes(options.vanillaRoots ?? process.env.DZUI_VANILLA_ASSETS, root);
+  const styles = buildStyleRegistry(root, files, {
+    externalRegistries: vanillaIndexes.map((index) => index.styles).filter(Boolean),
+  });
   const vanillaImageSetByName = new Map();
 
   for (const filePath of files) {
@@ -124,6 +126,7 @@ function buildExternalAssetIndex(root, source) {
   const metaByGuidName = new Map();
   const edds = [];
   const imageSets = [];
+  const styles = buildStyleRegistry(root, files);
 
   for (const filePath of files) {
     const ext = path.extname(filePath).toLowerCase();
@@ -174,6 +177,7 @@ function buildExternalAssetIndex(root, source) {
     edds,
     imageSets,
     imageSetByName: new Map(imageSets.map((set) => [set.name.toLowerCase(), set])),
+    styles,
   };
 }
 

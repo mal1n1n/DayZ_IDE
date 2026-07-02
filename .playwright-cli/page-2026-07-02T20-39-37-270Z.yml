@@ -1,0 +1,396 @@
+- generic [ref=e2]:
+  - navigation "Workspace" [ref=e3]:
+    - generic [ref=e4]:
+      - strong [ref=e5]: DayZ IDE
+      - generic [ref=e6]: UI Editor
+    - button "Editor" [ref=e7] [cursor=pointer]
+    - button "Project" [ref=e8] [cursor=pointer]
+    - button "Assets" [ref=e9] [cursor=pointer]
+    - button "MCP" [ref=e10] [cursor=pointer]
+  - complementary [ref=e11]:
+    - generic [ref=e12]:
+      - generic [ref=e13]: Open Layout
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - generic [ref=e16]: Layout file
+          - textbox "Layout file" [ref=e17]: fixtures/layouts/pda_minimal.layout
+        - generic [ref=e18]:
+          - generic [ref=e19]: Project root
+          - textbox "Project root" [ref=e20]:
+            - /placeholder: Optional ClientMods root
+            - text: C:\Users\user\Documents\DayZ Projects
+        - generic [ref=e21]:
+          - generic [ref=e22]: Recent projects
+          - combobox "Recent projects" [ref=e23]:
+            - option "Recent projects"
+            - option "C:\\Users\\user\\Documents\\DayZ Projects" [selected]
+        - generic [ref=e24]:
+          - generic [ref=e25]: Preview language
+          - combobox "Preview language" [ref=e26]:
+            - option "original" [selected]
+            - option "english"
+            - option "czech"
+            - option "german"
+            - option "russian"
+            - option "polish"
+            - option "hungarian"
+            - option "italian"
+            - option "spanish"
+            - option "french"
+            - option "chinese"
+            - option "japanese"
+            - option "portuguese"
+            - option "chinesesimp"
+            - option
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - generic [ref=e29]: Width
+            - spinbutton "Width" [ref=e30]: "1920"
+          - generic [ref=e31]:
+            - generic [ref=e32]: Height
+            - spinbutton "Height" [ref=e33]: "1080"
+        - button "Open Layout" [ref=e34] [cursor=pointer]
+        - generic [ref=e35]:
+          - button "Load Settings" [ref=e36] [cursor=pointer]
+          - button "Save Settings" [ref=e37] [cursor=pointer]
+      - generic [ref=e38]: Layout Tree
+      - generic [ref=e39]:
+        - generic [ref=e341]:
+          - text: PDAFrame
+          - generic [ref=e342]: FrameWidgetClass
+        - generic [ref=e343]:
+          - text: ItemSlot
+          - generic [ref=e344]: FrameWidgetClass
+  - main [ref=e40]:
+    - generic [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e44]: G
+          - strong [ref=e45]: pda_minimal.layout
+          - button "Close layout" [ref=e46] [cursor=pointer]: x
+        - generic [ref=e47]: Loading
+      - generic "Preview toolbar" [ref=e48]:
+        - button "Toggle grid" [ref=e49] [cursor=pointer]
+        - button "Toggle snap" [ref=e50] [cursor=pointer]
+        - button "Not implemented" [disabled] [ref=e51]
+        - button "Preview normal state" [ref=e52] [cursor=pointer]
+        - button "Preview disabled state" [ref=e53] [cursor=pointer]
+        - button "Selection color" [ref=e54] [cursor=pointer]
+        - button "Scaled" [ref=e55] [cursor=pointer]
+        - button "Grid Size" [ref=e56] [cursor=pointer]
+        - button "Snap Margin" [ref=e57] [cursor=pointer]
+        - 'button "Zoom: 100%" [ref=e577] [cursor=pointer]'
+        - combobox "Preview resolution" [ref=e59]:
+          - option "FitToWindow"
+          - option "800x600"
+          - option "1280x720"
+          - option "1280x800"
+          - option "1280x1024"
+          - option "1360x768"
+          - option "1366x768"
+          - option "1440x900"
+          - option "1600x900"
+          - option "1680x1050"
+          - option "1920x1080" [selected]
+          - option "2560x1440"
+          - option "3840x2160"
+        - combobox "Preview state" [ref=e60]:
+          - option "normal" [selected]
+          - option "hover"
+          - option "selected"
+          - option "disabled"
+        - spinbutton "Grid size": "8"
+        - checkbox "Show grid" [checked]
+        - checkbox "Snap to grid"
+        - generic [ref=e61]: 1920x1080
+    - generic [ref=e64]:
+      - generic [ref=e65]:
+        - tablist "Layout diagnostics" [ref=e66]:
+          - tab "Source" [selected] [ref=e67] [cursor=pointer]
+          - tab "Console 1" [ref=e578] [cursor=pointer]:
+            - text: Console
+            - generic [ref=e69]: "1"
+          - tab "Diagnostics" [ref=e70] [cursor=pointer]
+          - tab "Model" [ref=e71] [cursor=pointer]
+        - generic [ref=e72]:
+          - button "Refresh" [ref=e73] [cursor=pointer]
+          - button "Edit" [ref=e74] [cursor=pointer]
+          - button "Diff" [disabled] [ref=e75]
+          - button "Apply" [disabled] [ref=e76]
+          - button "Revert" [disabled] [ref=e77]
+          - button "Undo" [disabled] [ref=e78]
+          - button "Redo" [disabled] [ref=e79]
+      - tabpanel [ref=e81]:
+        - textbox [ref=e82]: "FrameWidgetClass PDAFrame { position -0.001266 -0.000451 size 1.000832 1.017749 { FrameWidgetClass ItemSlot { position 0.538318 0.273377 size 0.163915 0.197702 color 0.898 1 1 0.85 } } }"
+  - complementary [ref=e83]:
+    - generic [ref=e84]:
+      - generic [ref=e85]: Inspector
+      - generic [ref=e86]:
+        - generic [ref=e347]:
+          - term [ref=e348]: Name
+          - definition [ref=e349]: PDAFrame
+          - term [ref=e350]: Type
+          - definition [ref=e351]: FrameWidgetClass
+          - term [ref=e352]: Line
+          - definition [ref=e353]: "1"
+          - term [ref=e354]: Box
+          - definition [ref=e355]: "-2.4, -0.5, 1921.6, 1099.2"
+          - term [ref=e356]: Text
+          - definition [ref=e357]
+          - term [ref=e358]: Font
+          - definition [ref=e359]
+          - term [ref=e360]: Style
+          - definition [ref=e361]
+          - term [ref=e362]: Priority
+          - definition [ref=e363]: "0"
+        - generic [ref=e364]:
+          - tree "Widget classes" [ref=e365]:
+            - group [ref=e366]:
+              - generic "v Basic" [ref=e367] [cursor=pointer]
+              - generic [ref=e368]:
+                - button "ButtonWidget" [ref=e369] [cursor=pointer]
+                - button "CheckBoxWidget" [ref=e370] [cursor=pointer]
+                - button "ContentWidget" [ref=e371] [cursor=pointer]
+                - button "EditBoxWidget" [ref=e372] [cursor=pointer]
+                - button "EmbededWidget" [ref=e373] [cursor=pointer]
+                - button "FrameWidget" [ref=e374] [cursor=pointer]
+                - button "ImageWidget" [ref=e375] [cursor=pointer]
+                - button "MultilineEditBoxWidget" [ref=e376] [cursor=pointer]
+                - button "MultilineTextWidget" [ref=e377] [cursor=pointer]
+                - button "PanelWidget" [ref=e378] [cursor=pointer]
+                - button "PasswordEditBoxWidget" [ref=e379] [cursor=pointer]
+                - button "ProgressBarWidget" [ref=e380] [cursor=pointer]
+                - button "RichTextWidget" [ref=e381] [cursor=pointer]
+                - button "SimpleProgressBarWidget" [ref=e382] [cursor=pointer]
+                - button "SliderWidget" [ref=e383] [cursor=pointer]
+                - button "TextListboxWidget" [ref=e384] [cursor=pointer]
+                - button "TextWidget" [ref=e385] [cursor=pointer]
+                - button "WindowWidget" [ref=e386] [cursor=pointer]
+                - button "XComboBoxWidget" [ref=e387] [cursor=pointer]
+            - group [ref=e388]:
+              - generic "v Game" [ref=e389] [cursor=pointer]
+              - generic [ref=e390]:
+                - button "HtmlWidget" [ref=e391] [cursor=pointer]
+                - button "ItemPreviewWidget" [ref=e392] [cursor=pointer]
+                - button "MapWidget" [ref=e393] [cursor=pointer]
+                - button "PlayerPreviewWidget" [ref=e394] [cursor=pointer]
+                - button "ServerBrowserWidget" [ref=e395] [cursor=pointer]
+                - button "SmartPanelWidget" [ref=e396] [cursor=pointer]
+                - button "ThreeStateCheckboxWidget" [ref=e397] [cursor=pointer]
+            - group [ref=e398]:
+              - generic "v Helpers" [ref=e399] [cursor=pointer]
+              - generic [ref=e400]:
+                - button "GridSpacerWidget" [ref=e401] [cursor=pointer]
+                - button "ScrollWidget" [ref=e402] [cursor=pointer]
+                - button "WrapSpacerWidget" [ref=e403] [cursor=pointer]
+            - group [ref=e404]:
+              - generic "v Special" [ref=e405] [cursor=pointer]
+              - generic [ref=e406]:
+                - button "CanvasWidget" [ref=e407] [cursor=pointer]
+                - button "GenericListboxWidget" [ref=e408] [cursor=pointer]
+                - button "RenderTargetWidget" [ref=e409] [cursor=pointer]
+                - button "RTTextureWidget" [ref=e410] [cursor=pointer]
+                - button "UniversalListboxWidget" [ref=e411] [cursor=pointer]
+                - button "VideoWidget" [ref=e412] [cursor=pointer]
+          - generic [ref=e413]:
+            - textbox [ref=e414]: FrameWidget
+            - button "Add Child" [ref=e415] [cursor=pointer]
+          - generic [ref=e416]:
+            - combobox [ref=e417]
+            - button "Reparent" [disabled] [ref=e418]
+            - button "Delete" [ref=e419] [cursor=pointer]
+      - generic [ref=e87]: Typed Properties
+      - generic [ref=e88]:
+        - generic [ref=e420]:
+          - generic [ref=e421]: Geometry
+          - generic [ref=e422]:
+            - strong [ref=e423]: PDAFrame
+            - code [ref=e424]: FrameWidgetClass
+          - generic [ref=e425]:
+            - generic [ref=e426]:
+              - generic [ref=e427]: X
+              - spinbutton "X %" [ref=e428]: "-0.1266"
+              - combobox [ref=e429]:
+                - option "%" [selected]
+                - option "px"
+            - generic [ref=e430]:
+              - generic [ref=e431]: "Y"
+              - spinbutton "Y %" [ref=e432]: "-0.0451"
+              - combobox [ref=e433]:
+                - option "%" [selected]
+                - option "px"
+            - generic [ref=e434]:
+              - generic [ref=e435]: W
+              - spinbutton "W %" [ref=e436]: "100.0832"
+              - combobox [ref=e437]:
+                - option "%" [selected]
+                - option "px"
+            - generic [ref=e438]:
+              - generic [ref=e439]: H
+              - spinbutton "H %" [ref=e440]: "101.7749"
+              - combobox [ref=e441]:
+                - option "%" [selected]
+                - option "px"
+          - generic [ref=e442]:
+            - generic [ref=e443]:
+              - generic [ref=e444]: H anchor
+              - combobox "H anchor" [ref=e445]:
+                - option "left" [selected]
+                - option "center"
+                - option "right"
+            - generic [ref=e446]:
+              - generic [ref=e447]: V anchor
+              - combobox "V anchor" [ref=e448]:
+                - option "top" [selected]
+                - option "center"
+                - option "bottom"
+          - generic "Anchor presets" [ref=e449]:
+            - button "left top" [ref=e450] [cursor=pointer]
+            - button "center top" [ref=e451] [cursor=pointer]
+            - button "right top" [ref=e452] [cursor=pointer]
+            - button "left center" [ref=e453] [cursor=pointer]
+            - button "center center" [ref=e454] [cursor=pointer]
+            - button "right center" [ref=e455] [cursor=pointer]
+            - button "left bottom" [ref=e456] [cursor=pointer]
+            - button "center bottom" [ref=e457] [cursor=pointer]
+            - button "right bottom" [ref=e458] [cursor=pointer]
+          - button "Save Geometry" [ref=e459] [cursor=pointer]
+        - generic [ref=e460]: Layout
+        - generic [ref=e461]:
+          - generic [ref=e462]:
+            - generic [ref=e463]: Position
+            - code [ref=e464]: position
+          - generic [ref=e465]:
+            - generic [ref=e466]:
+              - generic [ref=e467]: x
+              - spinbutton "x" [ref=e468]: "-0.001266"
+            - generic [ref=e469]:
+              - generic [ref=e470]: "y"
+              - spinbutton "y" [ref=e471]: "-0.000451"
+          - button "Save" [ref=e472] [cursor=pointer]
+        - generic [ref=e473]:
+          - generic [ref=e474]:
+            - generic [ref=e475]: Size
+            - code [ref=e476]: size
+          - generic [ref=e477]:
+            - generic [ref=e478]:
+              - generic [ref=e479]: w
+              - spinbutton "w" [ref=e480]: "1.000832"
+            - generic [ref=e481]:
+              - generic [ref=e482]: h
+              - spinbutton "h" [ref=e483]: "1.017749"
+          - button "Save" [ref=e484] [cursor=pointer]
+        - generic [ref=e485]:
+          - generic [ref=e486]:
+            - generic [ref=e487]: Exact X
+            - code [ref=e488]: hexactpos
+          - generic [ref=e489]:
+            - checkbox "Exact X" [ref=e490]
+            - generic [ref=e491]: Exact X
+          - button "Save" [ref=e492] [cursor=pointer]
+        - generic [ref=e493]:
+          - generic [ref=e494]:
+            - generic [ref=e495]: Exact Y
+            - code [ref=e496]: vexactpos
+          - generic [ref=e497]:
+            - checkbox "Exact Y" [ref=e498]
+            - generic [ref=e499]: Exact Y
+          - button "Save" [ref=e500] [cursor=pointer]
+        - generic [ref=e501]:
+          - generic [ref=e502]:
+            - generic [ref=e503]: Exact W
+            - code [ref=e504]: hexactsize
+          - generic [ref=e505]:
+            - checkbox "Exact W" [ref=e506]
+            - generic [ref=e507]: Exact W
+          - button "Save" [ref=e508] [cursor=pointer]
+        - generic [ref=e509]:
+          - generic [ref=e510]:
+            - generic [ref=e511]: Exact H
+            - code [ref=e512]: vexactsize
+          - generic [ref=e513]:
+            - checkbox "Exact H" [ref=e514]
+            - generic [ref=e515]: Exact H
+          - button "Save" [ref=e516] [cursor=pointer]
+        - generic [ref=e517]:
+          - generic [ref=e518]:
+            - generic [ref=e519]: H Align
+            - code [ref=e520]: halign
+          - combobox [ref=e521]:
+            - option "left" [selected]
+            - option "center"
+            - option "right"
+          - button "Save" [ref=e522] [cursor=pointer]
+        - generic [ref=e523]:
+          - generic [ref=e524]:
+            - generic [ref=e525]: V Align
+            - code [ref=e526]: valign
+          - combobox [ref=e527]:
+            - option "top" [selected]
+            - option "center"
+            - option "bottom"
+          - button "Save" [ref=e528] [cursor=pointer]
+        - generic [ref=e529]: State
+        - generic [ref=e530]:
+          - generic [ref=e531]:
+            - generic [ref=e532]: Visible
+            - code [ref=e533]: visible
+          - generic [ref=e534]:
+            - checkbox "Visible" [checked] [ref=e535]
+            - generic [ref=e536]: Visible
+          - button "Save" [ref=e537] [cursor=pointer]
+        - generic [ref=e538]:
+          - generic [ref=e539]:
+            - generic [ref=e540]: Ignore Pointer
+            - code [ref=e541]: ignorepointer
+          - generic [ref=e542]:
+            - checkbox "Ignore Pointer" [ref=e543]
+            - generic [ref=e544]: Ignore Pointer
+          - button "Save" [ref=e545] [cursor=pointer]
+        - generic [ref=e546]:
+          - generic [ref=e547]:
+            - generic [ref=e548]: Priority
+            - code [ref=e549]: priority
+          - spinbutton [ref=e550]: "0"
+          - button "Save" [ref=e551] [cursor=pointer]
+        - generic [ref=e552]: Style
+        - generic [ref=e553]:
+          - generic [ref=e554]:
+            - generic [ref=e555]: Style
+            - code [ref=e556]: style
+          - textbox [ref=e557]
+          - button "Save" [ref=e558] [cursor=pointer]
+        - generic [ref=e559]:
+          - generic [ref=e560]:
+            - generic [ref=e561]: Font
+            - code [ref=e562]: font
+          - textbox [ref=e563]
+          - button "Save" [ref=e564] [cursor=pointer]
+        - generic [ref=e565]:
+          - generic [ref=e566]:
+            - generic [ref=e567]: Color
+            - code [ref=e568]: color
+          - generic [ref=e569]:
+            - textbox [ref=e570]: "#ffffff"
+            - generic [ref=e571]:
+              - generic [ref=e572]: a
+              - spinbutton "a" [ref=e573]: "1"
+          - button "Save" [ref=e574] [cursor=pointer]
+      - generic [ref=e89]: Raw Property
+      - generic [ref=e90]:
+        - generic [ref=e91]:
+          - generic [ref=e92]: Key
+          - textbox "Key" [ref=e93]:
+            - /placeholder: text, position, size, image0
+            - text: position
+        - generic [ref=e94]:
+          - generic [ref=e95]: Values
+          - textbox "Values" [ref=e96]:
+            - /placeholder: Space-separated values
+            - text: "-0.001266 -0.000451"
+        - button "Save Property" [ref=e97] [cursor=pointer]
+      - generic [ref=e98]: Images
+      - paragraph [ref=e575]: No image slots.
+    - generic [ref=e100]:
+      - generic [ref=e101]: Diagnostics
+      - paragraph [ref=e576]: No diagnostics.

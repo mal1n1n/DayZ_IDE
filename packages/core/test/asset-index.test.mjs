@@ -81,14 +81,14 @@ test("buildProjectAssetIndex resolves raw, GUID, and imageset image refs", () =>
   assert.equal(setResolution.texture.virtualPath, "MG_StalkerPDA/gui/data/data.edds");
 });
 
-function makeDdsHeader({ width, height, bits, fourCc = "" }) {
+function makeDdsHeader({ width, height, bits, fourCc = "", mipMapCount = 1 }) {
   const header = Buffer.alloc(128);
   header.write("DDS ", 0, "ascii");
   header.writeUInt32LE(124, 4);
   header.writeUInt32LE(height, 12);
   header.writeUInt32LE(width, 16);
   header.writeUInt32LE(width * 4, 20);
-  header.writeUInt32LE(1, 28);
+  header.writeUInt32LE(mipMapCount, 28);
   header.writeUInt32LE(32, 76);
   header.writeUInt32LE(0x41, 80);
   if (fourCc) header.write(fourCc, 84, "ascii");
@@ -130,6 +130,29 @@ function writeDxt5AlphaIndices(buffer, offset, indices) {
   for (let byteIndex = 0; byteIndex < 6; byteIndex += 1) {
     buffer[offset + byteIndex] = Number((packed >> BigInt(byteIndex * 8)) & 0xffn);
   }
+}
+
+function lz4LiteralBlock(bytes) {
+  const literalLength = bytes.length;
+  const header = [];
+  if (literalLength < 15) {
+    header.push(literalLength << 4);
+  } else {
+    header.push(0xf0);
+    let remaining = literalLength - 15;
+    while (remaining >= 255) {
+      header.push(255);
+      remaining -= 255;
+    }
+    header.push(remaining);
+  }
+  return Buffer.concat([Buffer.from(header), bytes]);
+}
+
+function uint32le(value) {
+  const buffer = Buffer.alloc(4);
+  buffer.writeUInt32LE(value, 0);
+  return buffer;
 }
 
 test("buildProjectAssetIndex can resolve vanilla DayZ paths and builtin imagesets", () => {
@@ -220,6 +243,41 @@ test("decodeDdsRgba and ensureDecodedPreviewAsset convert DXT1 DDS blocks native
   assert.equal(cached.ok, true);
   assert.equal(cached.decoder, "native-dds-dxt1");
   assert.equal(fs.existsSync(pngPath), true);
+});
+
+test("decodeDdsRgba converts Enfusion chunked EDDS base mip", () => {
+  const onePixelMip = Buffer.from([0, 0, 0, 255]);
+  const baseMip = Buffer.from([
+    0, 0, 255, 255,
+    0, 255, 0, 255,
+    255, 0, 0, 255,
+    255, 255, 255, 255,
+  ]);
+  const lz4Payload = lz4LiteralBlock(baseMip);
+  const lz4BaseMip = Buffer.concat([uint32le(baseMip.length), uint32le((lz4Payload.length | 0x80000000) >>> 0), lz4Payload]);
+  const header = makeDdsHeader({
+    width: 2,
+    height: 2,
+    bits: 32,
+    mipMapCount: 2,
+  });
+  const descriptors = Buffer.alloc(16);
+  descriptors.write("COPY", 0, "ascii");
+  descriptors.writeUInt32LE(onePixelMip.length, 4);
+  descriptors.write("LZ4 ", 8, "ascii");
+  descriptors.writeUInt32LE(lz4BaseMip.length, 12);
+
+  const decoded = decodeDdsRgba(Buffer.concat([header, descriptors, onePixelMip, lz4BaseMip]));
+
+  assert.equal(decoded.format, "chunked-32bpp");
+  assert.equal(decoded.width, 2);
+  assert.equal(decoded.height, 2);
+  assert.deepEqual([...decoded.rgba], [
+    255, 0, 0, 255,
+    0, 255, 0, 255,
+    0, 0, 255, 255,
+    255, 255, 255, 255,
+  ]);
 });
 
 test("decodeDdsRgba converts DXT5 alpha blocks natively", () => {
